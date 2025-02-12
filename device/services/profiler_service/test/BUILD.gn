@@ -1,0 +1,69 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("../../../base/config.gni")
+
+module_output_path = "${OHOS_PROFILER_TEST_MODULE_OUTPUT_PATH}/device"
+config("module_private_config") {
+  visibility = [ ":*" ]
+}
+
+config("cflags_config") {
+  cflags = [
+    "-Wno-sign-compare",
+    "-Wno-inconsistent-missing-override",
+    "-Dprivate=public",  #allow test code access private members
+  ]
+}
+
+ohos_unittest("profiler_service_ut") {
+  module_out_path = module_output_path
+  sources = [
+    "../../plugin_service/src/plugin_session.cpp",
+    "../../plugin_service/src/plugin_session_manager.cpp",
+    "unittest/plugin_service_stubs.cpp",
+    "unittest/profiler_capability_manager_test.cpp",
+    "unittest/profiler_data_repeater_test.cpp",
+    "unittest/profiler_service_performance_test.cpp",
+    "unittest/profiler_service_test.cpp",
+    "unittest/result_demuxer_test.cpp",
+    "unittest/trace_file_reader_test.cpp",
+    "unittest/trace_file_writer_test.cpp",
+  ]
+  deps = [
+    "${OHOS_PROFILER_DIR}/protos/services:proto_services_cpp",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/cpu_data:cpu_data_cpp",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/diskio_data:diskio_data_cpp",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/hilog_data:hilog_data_cpp",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/memory_data:memory_data_cpp",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/network_data:network_data_cpp",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/process_data:process_data_cpp",
+    "../:profiler_service",
+    "../../../base:hiprofiler_base",
+    "//third_party/googletest:gtest",
+  ]
+  include_dirs = [
+    "//third_party/googletest/googletest/include/gtest",
+    "${OHOS_PROFILER_DIR}/interfaces/kits",
+  ]
+  configs = [ ":cflags_config" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+}
+
+group("unittest") {
+  testonly = true
+  deps = [ ":profiler_service_ut" ]
+}

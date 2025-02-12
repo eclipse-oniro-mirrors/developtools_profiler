@@ -1,0 +1,208 @@
+# Copyright (C) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+print("target_os", target_os)
+print("target_name", target)
+group("default_deps") {
+  public_configs = [ ":default_config" ]
+  public_deps = []
+}
+config("default_config") {
+  include_dirs = [
+    "..",
+    "../include",
+  ]
+}
+config("trace_cfg") {
+  cflags_cc = [
+    "-std=c++17",
+
+    # "-std=gnu++17",
+    "-fvisibility=hidden",
+    "-Wno-unused-variable",
+  ]
+  if (!is_test) {
+    cflags_cc += [
+      "-fno-rtti",
+      "-fno-exceptions",
+    ]
+  }
+}
+
+config("visibility_hidden") {
+  cflags = [ "-fvisibility=hidden" ]
+}
+
+config("default") {
+  cflags_c = []
+  cflags_cc = []
+  libs = []
+
+  cflags = [
+    "-fstrict-aliasing",
+    "-g",
+    "-Wformat",
+    "-Wno-unused-variable",
+  ]
+
+  if (is_linux || is_macx) {
+    cflags += [
+      "-Wa,--noexecstack",
+      "-fcolor-diagnostics",
+      "-fdiagnostics-show-template-tree",
+      "-ftrapv",
+    ]
+    if (!use_wasm) {
+      cflags += [
+        "-fstack-protector-strong",
+        "-fstack-protector-all",
+        "-D_FORTIFY_SOURCE=2 -O2",
+        "-D SUPPORTTHREAD",  # if support thread
+
+        # "-D HAVE_ELF_H",
+        "-D target_cpu_x64",
+
+        # "-D HAVE_LINK_H",
+        # "-D_GNU_SOURCE",
+        "-DHAVE_CONFIG_H",
+        "-DNDEBUG",
+        "-DCC_IS_CLANG",
+      ]
+      # with_libunwind = true
+    }
+    if (!use_wasm && !is_win && !is_macx && !is_test) {
+      cflags += [ "-D HAVE_LIBUNWIND" ]
+    }
+
+    cflags += [ "-D USE_VTABLE" ]
+    if (use_wasm) {
+      cflags += [
+        "-D IS_WASM",
+
+        #  "-D HAVE_LIBUNWIND",
+        "-D target_cpu_x64",
+        "-DHAVE_CONFIG_H",
+        "-DNDEBUG",
+        "-DCC_IS_CLANG",
+        "-D__x86_64__",
+      ]
+    }
+    cflags += [ "-D BINDER_ASYNC" ]
+    libs += [ "pthread" ]
+    if (!is_macx) {
+      libs += [ "rt" ]
+    }
+    if (!is_win) {
+      cflags += [
+        "-fPIE",
+        "-fPIC",
+      ]
+    }
+  }
+  if (is_win) {
+    cflags += [ "-D is_mingw" ]
+    defines = [ "WIN32_LEAN_AND_MEAN" ]
+    libs += [ "wsock32" ]
+    libs += [ "Ws2_32" ]
+    cflags += [
+      "-D SECUREC_IS_DLL_LIBRARY",
+      "-D __KERNEL__",
+    ]
+  }
+  if (with_perf) {
+    cflags += [ "-D WITH_PERF" ]
+  }
+  if (with_ebpf_help_table) {
+    cflags += [ "-D WITH_EBPF_HELP" ]
+  }
+}
+
+config("symbols") {
+  cflags = [ "-O0" ]
+  if (is_linux || is_macx) {
+    cflags += [ "-funwind-tables" ]
+  }
+}
+
+config("release") {
+  cflags = [
+    "-fdata-sections",
+    "-ffunction-sections",
+  ]
+
+  cflags += [ "-O3" ]
+  ldflags = [ "-fstack-protector" ]
+  if (!is_macx) {
+    ldflags += [ "-Wl,-O1" ]
+    if (!is_win) {
+      ldflags += [
+        "-fuse-ld=gold",
+        "-Wl,--gc-sections",
+      ]
+    }
+  }
+
+  if (!is_win && !is_macx) {
+    ldflags += [
+      "-fPIC",
+      "-fpie",
+      "-pie",
+    ]
+  }
+  defines = [ "NDEBUG" ]
+}
+
+config("shared_library") {
+  if (!is_win) {
+    ldflags = [ "-fPIC" ]
+  }
+}
+
+config("executable") {
+  print("use_wasm", use_wasm)
+  ldflags = []
+
+  if (is_linux || (is_macx && !use_wasm)) {
+    ldflags += []
+  }
+  if (!is_macx && !use_wasm && !is_win) {
+    ldflags = [
+      "-Wl,--disable-new-dtags",
+      "-Wl,-z,noexecstack",
+      "-lrt",
+      "-fuse-ld=gold",
+      "-Wl,-z,now",
+      "-Wl,-z,relro",
+    ]
+  }
+  if (!is_macx && !use_wasm) {
+    ldflags += [ "-fpie" ]
+  }
+  if (!is_macx && !use_wasm && !is_win) {
+    ldflags += [ "-pie" ]
+  }
+
+  if (is_macx) {
+    ldflags += [
+      "-fdata-sections",
+      "-ffunction-sections",
+    ]
+    if (!use_wasm) {
+      ldflags += [ "-Wl,-U,__sanitizer_options_link_helper" ]
+    }
+  }
+  if (!is_debug && !is_macx) {
+    ldflags += [ "-s" ]
+  } else if (!is_debug && is_macx) {
+    ldflags += [ "-dead_strip" ]
+  }
+}

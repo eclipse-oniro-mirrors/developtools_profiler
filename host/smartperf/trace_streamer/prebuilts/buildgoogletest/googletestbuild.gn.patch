@@ -1,0 +1,133 @@
+17d16
+<     "googletest/include/gtest/gtest.h",
+18a18,34
+>     "googletest/include/gtest/gtest.h",
+>   ]
+> 
+>   cflags = [
+>     "-Wno-inconsistent-missing-override",
+> 
+>     # "-Dprivate=public",  #allow test code access private members
+>     "-fprofile-arcs",
+>     "-ftest-coverage",
+>     "-Wno-unused-command-line-argument",
+>     "-Wno-format",
+>     "-Wno-unused-const-variable",
+>     "-Wno-unused-variable",
+>     "-Wno-used-but-marked-unused",
+>     "-Wno-exit-time-destructors",
+>     "-Wno-missing-noreturn",
+>     "-Wno-missing-noreturn",
+28a45,48
+>     "googletest/include/gtest/hwext/gtest-ext.h",
+>     "googletest/include/gtest/hwext/gtest-filter.h",
+>     "googletest/include/gtest/hwext/gtest-tag.h",
+>     "googletest/include/gtest/hwext/utils.h",
+43,46d62
+<     "googletest/include/gtest/hwext/gtest-ext.h",
+<     "googletest/include/gtest/hwext/gtest-filter.h",
+<     "googletest/include/gtest/hwext/gtest-tag.h",
+<     "googletest/include/gtest/hwext/utils.h",
+64c80,81
+<   configs -= ["//build/config/coverage:default_coverage"]
+---
+> 
+>   #  configs -= ["//build/config/coverage:default_coverage"]
+69,73c86,100
+<   sources = [
+<     "googletest/src/gtest_main.cc",
+<   ]
+<   public_deps = [
+<     ":gtest",
+---
+>   sources = [ "googletest/src/gtest_main.cc" ]
+> 
+>   cflags = [
+>     "-Wno-inconsistent-missing-override",
+> 
+>     #  "-Dprivate=public",  #allow test code access private members
+>     "-fprofile-arcs",
+>     "-ftest-coverage",
+>     "-Wno-unused-command-line-argument",
+>     "-Wno-format",
+>     "-Wno-unused-const-variable",
+>     "-Wno-unused-variable",
+>     "-Wno-used-but-marked-unused",
+>     "-Wno-exit-time-destructors",
+>     "-Wno-missing-noreturn",
+75,76c102
+<   configs -= ["//build/config/coverage:default_coverage"]
+< }
+---
+>   public_deps = [ ":gtest" ]
+77a104,105
+>   #  configs -= ["//build/config/coverage:default_coverage"]
+> }
+94a123,136
+>   cflags = [
+>     "-Wno-inconsistent-missing-override",
+> 
+>     #  "-Dprivate=public",  #allow test code access private members
+>     "-fprofile-arcs",
+>     "-ftest-coverage",
+>     "-Wno-unused-command-line-argument",
+>     "-Wno-format",
+>     "-Wno-unused-const-variable",
+>     "-Wno-unused-variable",
+>     "-Wno-used-but-marked-unused",
+>     "-Wno-exit-time-destructors",
+>     "-Wno-missing-noreturn",
+>   ]
+99,100c141,154
+<   public = [
+<     "googlemock/include/gmock/gmock.h",
+---
+>   public = [ "googlemock/include/gmock/gmock.h" ]
+>   cflags = [
+>     "-Wno-inconsistent-missing-override",
+> 
+>     #    "-Dprivate=public",  #allow test code access private members
+>     "-fprofile-arcs",
+>     "-ftest-coverage",
+>     "-Wno-unused-command-line-argument",
+>     "-Wno-format",
+>     "-Wno-unused-const-variable",
+>     "-Wno-unused-variable",
+>     "-Wno-used-but-marked-unused",
+>     "-Wno-exit-time-destructors",
+>     "-Wno-missing-noreturn",
+129,132c183,185
+<   configs -= ["//build/config/coverage:default_coverage"]
+<   deps = [
+<     ":gtest",
+<   ]
+---
+> 
+>   #  configs -= ["//build/config/coverage:default_coverage"]
+>   deps = [ ":gtest" ]
+137,138c190,203
+<   sources = [
+<     "googlemock/src/gmock_main.cc",
+---
+> 
+>   cflags = [
+>     "-Wno-inconsistent-missing-override",
+> 
+>     #    "-Dprivate=public",  #allow test code access private members
+>     "-fprofile-arcs",
+>     "-ftest-coverage",
+>     "-Wno-unused-command-line-argument",
+>     "-Wno-format",
+>     "-Wno-unused-const-variable",
+>     "-Wno-unused-variable",
+>     "-Wno-used-but-marked-unused",
+>     "-Wno-exit-time-destructors",
+>     "-Wno-missing-noreturn",
+139a205
+>   sources = [ "googlemock/src/gmock_main.cc" ]
+144,145d209
+<   configs -= ["//build/config/coverage:default_coverage"]
+< }
+146a211,212
+>   #  configs -= ["//build/config/coverage:default_coverage"]
+> }

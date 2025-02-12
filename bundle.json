@@ -1,0 +1,87 @@
+{
+  "name": "@ohos/profiler",
+  "description": "Performance profiler that provides an analytics tool for the memory, bytrace plug-in, and IDE, as well as plug-in capabilities",
+  "version": "3.09",
+  "license": "Apache License 2.0",
+  "publishAs": "code-segment",
+  "segment": {
+    "destPath": "developtools/profiler/device"
+  },
+  "dirs": {},
+  "scripts": {},
+  "component": {
+    "name": "profiler",
+    "subsystem": "developtools",
+    "features": [
+      "profiler_SmartPerf"
+    ],
+    "syscap": [
+      "SystemCapability.HiviewDFX.HiProfiler.HiDebug"
+    ],
+    "adapted_system_type": [
+      "standard"
+    ],
+    "rom": "188KB",
+    "ram": "2000KB",
+    "deps": {
+      "components": [
+        "hiviewdfx_hilog_native",
+        "ability_runtime",
+        "ability_base",
+        "common",
+        "zlib",
+        "hidumper",
+        "bundle_framework",
+        "hiview",
+        "bounds_checking_function",
+        "ipc",
+        "init",
+        "hilog_native",
+        "napi",
+        "samgr",
+        "c_utils"
+      ],
+      "third_party": [
+        "googletest",
+        "utils",
+        "zlib"
+      ]
+    },
+    "build": {
+      "sub_component": [
+        "//developtools/profiler/device:hiprofiler_targets",
+        "//developtools/profiler/hidebug/interfaces/js/kits:profiler_jsapi_module",
+        "//developtools/profiler/host/smartperf/client/client_command/:SP_daemon",
+        "//developtools/profiler/host/smartperf/client/:SmartPerf",
+        "//developtools/profiler/host/smartperf/client/client_command_fps/:GP_daemon_fps",
+	"//developtools/profiler/transitto:transitto_tool"
+      ],
+      "inner_kits": [
+        {
+          "header": {
+            "header_base": "//developtools/profiler/hidebug/interfaces/native/innerkits/include",
+            "header_files": [
+              "hidebug_base.h"
+            ]
+          },
+          "name": "//developtools/profiler/hidebug/interfaces/native/innerkits:libhidebug"
+        },
+        {
+          "header": {
+            "header_base": "//developtools/profiler/hidebug/interfaces/native/innerkits/include",
+            "header_files": [
+              "hidebug_base.h"
+            ]
+          },
+          "name": "//developtools/profiler/hidebug/interfaces/native/innerkits:libhidebug_init"
+        }
+      ],
+      "test": [
+        "//developtools/profiler/device:fuzztest",
+        "//developtools/profiler/device:unittest",
+        "//developtools/profiler/interfaces/kits/test:unittest",
+        "//developtools/profiler/hidebug/test/unittest:unittest"
+      ]
+    }
+  }
+}

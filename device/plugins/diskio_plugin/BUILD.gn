@@ -1,0 +1,81 @@
+# Copyright (C) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("../../base/config.gni")
+
+ohos_source_set("diskiodataplugin_source") {
+  part_name = "profiler"
+  sources = [
+    "../memory_plugin/src/buffer_splitter.cpp",
+    "src/diskio_data_plugin.cpp",
+    "src/diskio_module.cpp",
+    "src/io_stats.cpp",
+  ]
+  include_dirs = [
+    "include",
+    "../memory_plugin/include",
+    "${OHOS_PROFILER_DIR}/interfaces/kits",
+    "${OHOS_PROFILER_DIR}/device/base/include",
+    "//third_party/bounds_checking_function/include",
+  ]
+  deps = [
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf_lite",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/diskio_data:diskio_data_cpp",
+    "//third_party/bounds_checking_function:libsec_static",
+  ]
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    if (build_l2) {
+      external_deps = [ "shared_library:libhilog" ]
+    } else {
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    }
+  }
+  public_configs = [ "${OHOS_PROFILER_DIR}/device/base:hiprofiler_test_config" ]
+}
+
+ohos_shared_library("diskiodataplugin") {
+  output_name = "diskiodataplugin"
+
+  deps = [ ":diskiodataplugin_source" ]
+  install_enable = true
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}
+
+ohos_executable("diskiodataplugintest") {
+  output_name = "diskiodataplugintest"
+  sources = [ "src/test_main.cpp" ]
+  include_dirs = [
+    "include",
+    "../api/include",
+    "${OHOS_PROFILER_DIR}/interfaces/kits",
+    "${OHOS_PROFILER_DIR}/device/base/include",
+  ]
+  deps = [
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf_lite",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/diskio_data:diskio_data_cpp",
+  ]
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    if (build_l2) {
+      external_deps = [ "shared_library:libhilog" ]
+    } else {
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    }
+  }
+  install_enable = false
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}

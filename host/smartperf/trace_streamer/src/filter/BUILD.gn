@@ -1,0 +1,81 @@
+# Copyright (C) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//src/ts.gni")
+
+ohos_source_set("filter") {
+  sources = [
+    "args_filter.cpp",
+    "args_filter.h",
+    "binder_filter.cpp",
+    "binder_filter.h",
+    "clock_filter.cpp",
+    "clock_filter.h",
+    "cpu_filter.cpp",
+    "filter_base.cpp",
+    "filter_base.h",
+    "filter_filter.cpp",
+    "filter_filter.h",
+    "hi_sysevent_measure_filter.cpp",
+    "hi_sysevent_measure_filter.h",
+    "irq_filter.cpp",
+    "irq_filter.h",
+    "measure_filter.cpp",
+    "measure_filter.h",
+    "process_filter.cpp",
+    "process_filter.h",
+    "slice_filter.cpp",
+    "slice_filter.h",
+    "stat_filter.cpp",
+    "stat_filter.h",
+    "symbols_filter.cpp",
+    "symbols_filter.h",
+    "system_event_measure_filter.cpp",
+    "system_event_measure_filter.h",
+  ]
+  if (enable_ts_utest && !use_wasm) {
+    cflags = [
+      "-fprofile-arcs",
+      "-ftest-coverage",
+    ]
+    ldflags = [
+      "-fprofile-arcs",
+      "-ftest-coverage",
+      "--coverage",
+    ]
+    if (is_macx && is_test) {
+      cflags += [ "-D UT_MAC" ]
+    }
+  }
+  deps = []
+  include_dirs = [
+    "//src/base",
+    "//src/trace_streamer",
+    "//src/trace_data",
+    "//src/include",
+    "//src/filter",
+    "//src/cfg",
+    "${OHOS_PROTO_GEN}/types/plugins/memory_data",
+    "//src",
+    "//third_party/protobuf/src",
+    "//third_party/sqlite/include",
+    ".",
+  ]
+  if (with_perf) {
+    sources += [
+      "perf_data_filter.cpp",
+      "perf_data_filter.h",
+    ]
+  }
+}

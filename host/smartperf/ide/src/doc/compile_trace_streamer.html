@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>compile_trace_streamer</title>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <style>
+        code[class*="font-"],
+        pre[class*="font-"] {
+            text-align: left;
+            color: #333333;
+            background: none;
+            word-spacing: normal;
+            white-space: pre;
+            word-break: normal;
+            word-wrap: normal;
+            line-height: 1.5;
+            -moz-hyphens: none;
+            -ms-hyphens: none;
+            -o-tab-size: 8;
+            tab-size: 8;
+            -moz-tab-size: 8;
+            -webkit-hyphens: none;
+            hyphens: none;
+            font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+        }
+
+        pre[class*="font-"] {
+            border-radius: 3px;
+            background: #F5F5F5;
+            padding: 0.8em;
+            overflow: auto;
+        }
+
+        :not(pre) > code[class*="font-"] {
+            white-space: normal;
+            background: #F5F5F5;
+            padding: 0.2em;
+            border-radius: 0.3em;
+        }
+
+
+        .temporary.cdata {
+            color: #183690;
+        }
+
+        .temporary.comment,
+        .temporary.blockquote {
+            color: #969897;
+        }
+
+        .temporary.doctype,
+        .temporary.punctuation,
+        .temporary.variable,
+        .temporary.macro.property {
+            color: #333333;
+        }
+
+
+        .temporary.string,
+        .temporary.url,
+        .temporary.regex,
+        .temporary.attr-value {
+            color: #183690;
+        }
+
+        .temporary.operator,
+        .temporary.important,
+        .temporary.keyword,
+        .temporary.rule,
+        .temporary.builtin {
+            color: #a71d5c;
+        }
+
+        .temporary.atrule,
+        .temporary.constant,
+        .temporary.symbol,
+        .temporary.command,
+        .temporary.property,
+        .temporary.number,
+        .temporary.boolean,
+        .temporary.entity,
+        .temporary.code {
+            color: #0086b2;
+        }
+
+        .temporary.tag,
+        .temporary.selector,
+        .temporary.prolog {
+            color: #63a35e;
+        }
+
+        .temporary.entity {
+            cursor: help;
+        }
+
+        .temporary.title,
+        .temporary.title .temporary.punctuation {
+            font-weight: bold;
+            color: #1d3e89;
+        }
+
+        .temporary.list {
+            color: #ed6a48;
+        }
+
+        .temporary.function,
+        .temporary.namespace,
+        .temporary.pseudo-element,
+        .temporary.class,
+        .temporary.class-name,
+        .temporary.pseudo-class,
+        .temporary.id,
+        .temporary.url-reference .temporary.variable,
+        .temporary.attr-name {
+            color: #795da2;
+        }
+
+        .temporary.inserted {
+            color: #55a535;
+            background-color: #eaffee;
+        }
+
+        .temporary.bold {
+            font-weight: bold;
+        }
+
+        .temporary.deleted {
+            color: #bd2c08;
+            background-color: #ffecea;
+        }
+
+        .font-json .temporary.property {
+            color: #183690;
+        }
+
+        .temporary.italic {
+            font-style: italic;
+        }
+
+        .font-markup .temporary.tag .temporary.punctuation {
+            color: #333333;
+        }
+
+        .font-yaml .temporary.atrule {
+            color: #63a35a;
+        }
+
+        code.font-css,
+        .font-css .temporary.function {
+            color: #0086b8;
+        }
+
+        code.font-yaml {
+            color: #183690;
+        }
+
+        .font-ruby .temporary.function {
+            color: #333333;
+        }
+
+        .font-markdown .temporary.url {
+            color: #795da2;
+        }
+
+        .font-makefile .temporary.variable {
+            color: #183690;
+        }
+
+        .font-makefile .temporary.builtin {
+            color: #0086b3;
+        }
+
+        .font-makefile .temporary.symbol {
+            color: #795da2;
+        }
+
+        .font-bash .temporary.keyword {
+            color: #0086b3;
+        }
+
+        pre[data-wire] {
+            padding: 1em 0 1em 2em;
+            position: relative;
+        }
+
+        pre[data-wire] .line-highlight-wrapper {
+            background-color: transparent;
+            top: 2px;
+            left: 2px;
+            display: block;
+            width: 100%;
+            position: absolute;
+        }
+
+        pre[data-wire] .line-highlight {
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            pointer-events: none;
+            margin-top: 3em;
+            background: hsla(25, 10%, 55%,.06);
+            background: linear-gradient(to right, hsla(25, 10%, 40%,.2) 80%, hsla(23, 24%, 52%,0));
+            line-height: inherit;
+            white-space: pre;
+        }
+
+        pre[data-wire] .line-highlight:before,
+        pre[data-wire] .line-highlight[data-end]:after {
+            content: attr(data-start);
+            position: absolute;
+            background-color: hsla(22, 25%, 54%,.5);
+            min-width: 2em;
+            padding: 0 .6em;
+            top: 0.5em;
+            left: 0.4em;
+            color: hsl(22, 23%, 90%);
+            vertical-align: 0.3em;
+            border-radius: 10px;
+            text-shadow: none;
+            box-shadow: 0 2px white;
+            font: bold 60%/1.6 sans-serif;
+            text-align: center;
+        }
+
+        pre[data-wire] .line-highlight[data-end]:after {
+            bottom: 0.6em;
+            content: attr(data-end);
+            top: auto;
+        }
+
+        body {
+            font-size: 16px;
+            font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+            line-height: 1.6;
+            overflow: initial;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            color: #333333;
+            background-color: #FFFFFF;
+        }
+
+        body > :first-child {
+            margin-top: 0;
+        }
+
+        body h1, body h2, body h3{
+            margin-bottom: 16px;
+            color: #000000;
+            line-height: 1.2;
+            margin-top: 1em;
+        }
+
+        body h1 {
+            font-weight: 300;
+            font-size: 2.25em;
+            padding-bottom: 0.3em;
+        }
+
+        body h2 {
+            font-weight: 400;
+            font-size: 1.75em;
+            padding-bottom: 0.3em;
+        }
+
+        body h3 {
+            font-size: 1.5em;
+            font-weight: 500;
+        }
+
+        body h1, body h2, body h3{
+            font-weight: 600;
+        }
+
+        body del {
+            color: #5c5c5c;
+        }
+
+        body strong {
+            color: #000000;
+        }
+
+        body a {
+            text-decoration: none;
+            color: #08c;
+        }
+
+        body a:not([href]) {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        body a:hover {
+            color: #00a3f5;
+            text-decoration: none;
+        }
+
+        body img {
+            max-width: 100%;
+        }
+
+        body > ul, body > ol {
+            margin-bottom: 16px;
+        }
+
+        body ul, body ol {
+            padding-left: 2em;
+        }
+
+        body > p {
+            margin-top: 0;
+            word-wrap: break-word;
+            margin-bottom: 16px;
+        }
+
+        body ul.no-list, body ol.no-list {
+            padding: 0;
+            list-style-type: none;
+        }
+
+        body li {
+            margin-bottom: 0;
+        }
+
+        body ul ul, body ul ol, body ol ol, body ol ul {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        body li.task-list-item {
+            list-style: none;
+        }
+
+        body li > p {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        body .task-list-item-checkbox {
+            margin: 0 0.2em 0.25em -1.8em;
+            vertical-align: middle;
+        }
+
+        body blockquote {
+            margin: 16px 0;
+            font-size: inherit;
+            padding: 0 15px 0 0;
+            color: #5c5c5c;
+            background-color: #f0f0f0;
+            border-left: 4px solid #d6d6d6;
+        }
+
+        body .task-list-item-checkbox:hover {
+            cursor: pointer;
+        }
+
+        body blockquote > :first-child {
+            margin-top: 0;
+        }
+
+        body blockquote > :last-child {
+            margin-bottom: 0;
+        }
+
+        body hr {
+            background-color: #d6d6d6;
+            height: 6px;
+            border: 0 none;
+            margin: 32px 0 0 0;
+        }
+
+        body table th {
+            font-weight: bold;
+            color: #000000;
+        }
+
+        body table {
+            margin: 10px 0 15px 0;
+            border-collapse: collapse;
+            border-spacing: 0;
+            width: 100%;
+            display: block;
+            overflow: auto;
+            word-break: normal;
+            word-break: keep-all;
+        }
+
+        body table td, body table th {
+            padding: 5px 14px 0 0;
+            border: 1px solid #d6d6d6;
+        }
+
+        body dl {
+            padding: 0;
+        }
+
+        body dl dd {
+            padding: 0 15px;
+            margin-bottom: 15px
+        }
+
+        body dl dt {
+            margin-top: 16px;
+            padding: 0;
+            font-size: 1em;
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        body code {
+            font-size: 0.85em !important;
+            font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+            padding: 0.2em 0 0 0;
+            color: #000000;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
+
+        body code::before, body code::after {
+            letter-spacing: -0.2em;
+            content: "\00a0";
+        }
+
+        body .highlight pre {
+            word-break: normal;
+            margin-bottom: 0;
+        }
+
+        body pre > code {
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+            padding: 0;
+            margin: 0;
+            font-size: 0.85em !important;
+        }
+
+        body .highlight {
+            margin-bottom: 15px;
+        }
+
+        body pre code, body pre tt {
+            display: inline;
+            max-width: initial;
+            word-wrap: normal;
+            overflow: initial;
+            line-height: inherit;
+            background-color: transparent;
+            border: 0;
+            padding: 0;
+            margin: 0;
+        }
+
+        body .highlight pre, body pre {
+            overflow: auto;
+            font-size: .85em !important;
+            line-height: 1.45;
+            border: #d6d6d6;
+            border-radius: 3px;
+            padding: 1em;
+        }
+
+        body pre code:before, body pre tt:before, body pre code:after, body pre tt:after {
+            content: normal;
+        }
+
+        body p, body blockquote, body ul, body ol, body dl, body pre {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        body kbd {
+            color: #000000;
+            border: 1px solid #d6d6d6;
+            border-bottom: 2px solid #c7c7c7;
+            padding: 2px 4px 0 0;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
+
+        @media print {
+            body {
+                background-color: #FFFFFF;
+            }
+
+            body pre {
+                page-break-inside: avoid;
+            }
+
+            body table {
+                display: table;
+            }
+
+            body h1, body h2, body h3 {
+                page-break-after: avoid;
+                color: #000000;
+            }
+
+            body blockquote {
+                color: #5c5c5c;
+            }
+
+            body pre, body code {
+                white-space: pre;
+                word-wrap: break-word;
+            }
+
+            body img {
+                display: block;
+                max-width: 100%;
+                max-height: 100%;
+            }
+        }
+
+        .md-preview {
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+        }
+
+        .md-preview pre.line-numbers {
+            position: relative;
+            padding-left: 4em;
+            counter-reset: linenumber;
+        }
+        
+        .md-preview .pagebreak, .md-preview .newpage {
+            page-break-before: always;
+        }
+
+        .md-preview pre.line-numbers > code {
+            position: relative
+        }
+
+        .md-preview pre.line-numbers .figure-numbers-rows > span {
+            pointer-events: none;
+            display: block;
+            counter-increment: linenumber
+        }
+
+        .md-preview pre.line-numbers .figure-numbers-rows > span:before {
+            text-align: right;
+            content: counter(linenumber);
+            color: #999999;
+            display: block;
+            padding-right: 0.8em;
+        }
+        
+        .md-preview pre.line-numbers .figure-numbers-rows {
+            position: absolute;
+            top: 1em;
+            left: 0;
+            width: 3em;
+            letter-spacing: -1px;
+            border-right: 1px solid #999999;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            pointer-events: none;
+            font-size: 100%;
+        }
+
+        .md-preview:not([for="preview"]) .code-chunk .btn-group {
+            display: none;
+        }
+
+        .md-preview:not([for="preview"]) .code-chunk .status {
+            display: none;
+        }
+
+        .md-preview:not([for="preview"]) .code-chunk .output-div {
+            margin-bottom: 16px;
+        }
+
+        .scrollbar-type::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollbar-type::-webkit-scrollbar-thumb {
+            border-radius: 6px;
+            background-clip: content-box;
+            background-color: rgba(150, 150, 150, 0.66);
+            border: 4px solid rgba(150, 150, 150, 0.66);
+        }
+
+        .scrollbar-type::-webkit-scrollbar-track {
+            border-radius: 10px;
+            background-color: transparent;
+        }
+
+        body[for="native-export"]:not([data-display-mode]) .md-preview {
+            position: relative;
+            top: 0;
+        }
+
+
+        @media screen and (max-width: 450px) {
+            body[for="native-export"]:not([data-display-mode]) .md-preview {
+                font-size: 14px !important;
+                padding: 1em;
+            }
+        }
+
+        @media print {
+            body[for="native-export"]:not([data-display-mode]) #sidebarButton {
+                display: none;
+            }
+        }
+
+        @media screen and (min-width: 914px) {
+            body[for="native-export"]:not([data-display-mode]) .md-preview {
+                padding: 2em calc(50% - 457px + 2em);
+            }
+        }
+
+        @media screen and (max-width: 914px) {
+            body[for="native-export"]:not([data-display-mode]) .md-preview {
+                padding: 2em;
+            }
+        }
+
+        body[for="native-export"]:not([data-display-mode]) #sidebarButton {
+            position: fixed;
+            bottom: 8px;
+            left: 8px;
+            font-size: 28px;
+            cursor: pointer;
+            color: inherit;
+            text-align: center;
+            opacity: 0.4;
+            z-index: 99;
+            width: 32px;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] #sidebarButton {
+            opacity: 1;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc {
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 32px 0 48px 0;
+            width: 300px;
+            height: 100%;
+            font-size: 14px;
+            box-shadow: 0 0 4px rgba(150, 150, 150, 0.33);
+            box-sizing: border-box;
+            overflow: auto;
+            background-color: inherit;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc::-webkit-scrollbar-track {
+            background-color: transparent;
+            border-radius: 10px;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc::-webkit-scrollbar-thumb {
+            background-color: rgba(150, 150, 150, 0.66);
+            border-radius: 5px;
+            border: 4px solid rgba(150, 150, 150, 0.66);
+            background-clip: content-box;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc a {
+            text-decoration: none;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc li {
+            margin-bottom: .8em;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc ul {
+            margin-top: 0.8em;
+            padding: 0 1.6em;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc ul {
+            list-style-type: none;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-preview {
+            padding: 2em calc(50% - 457px - 150px);
+            margin: 0;
+            box-sizing: border-box;
+            left: 300px;
+            width: calc(100% - 300px);
+        }
+
+        @media screen and (max-width: 450px) {
+            body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-preview {
+                width: 100%;
+            }
+        }
+
+        @media screen and (max-width: 1274px) {
+            body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-preview {
+                padding: 2em;
+            }
+        }
+
+        body[for="native-export"]:not([data-display-mode]):not([sidebarToc]) .md-preview {
+            transform: translateX(-50%);
+            left: 50%;
+        }
+
+        body[for="native-export"]:not([data-display-mode]):not([sidebarToc]) .md-sidebar-toc {
+            display: none;
+        }
+
+    </style>
+</head>
+<body for="native-export" id="body">
+<div class="mume md-preview  ">
+    <h1 class="mume-header fontColor">1.如何独立编译Trace_streamer</h1>
+
+    <p class="fontColor">尽管本工具(trace_streamer)是在ohos工具箱中的一员，但你依然可以独立编译此工具。</p>
+    <p class="fontColor">本工具可以编译linux, mac, windows, WebAssembly版本。</p>
+    <p class="fontColor">本工具默认编译方式是使用gn</p>
+    <ul class="fontColor">
+        <li>编译方式</li>
+    </ul>
+    <pre class="font- light" data-info data-role="codeBlock"><code class="fontColor">third_party部分安装方式
+third_party相关控件下载链接：https://gitee.com/organizations/openharmony/projects
+在src路径下创建同级目录third_party。
+一、sqlite：
+1.打开上方链接，搜索sqlite。
+2.点击搜索结果进入下载界面，下载sqlite组件。
+3.把下载的文件解压后，文件夹命名为sqlite，并用代码路径中\prebuilts\buildsqlite\sqlite3build.gn文件替换sqlite目录中的BUILD.gn文件。
+4.把sqlite文件夹放入third_party目录中。
+二、protobuf：
+1.按上述下载方法，下载protobuf组件。
+2.把下载的文件解压后，文件夹命名为protobuf，并用代码路径中\prebuilts\buildprotobuf\protobufbuild.gn文件替换protobuf目录中的BUILD.gn文件。
+3.把protobuf文件夹放入third_party目录中。
+三、googletest：
+1.按上述下载方法，下载googletest相关组件。
+2.把下载的文件解压后，文件夹命名为googletest，并用代码路径中\prebuilts\buildgoogletest\googletestbuild.gn文件替换googletest目录中的BUILD.gn文件。
+3.把googletest文件夹放入third_party目录中。
+4.找到文件\googletest\include\gtest\internal\ gtest-port.h 把286行 #include &lt;sstream&gt; // NOLINT修改为
+#undef private
+#define private private
+#include &lt;sstream&gt;  // NOLINT
+#undef private
+#define private public</code></pre>
+
+    <p class="fontColor">编译不同版本：linux, WebAssembly, mac</p>
+    <pre class="font- light" data-info data-role="codeBlock"><code class="fontColor">./build.sh linux/wasm/macx
+</code></pre>
+
+    <p class="fontColor">如果需要编译WebAssembly版本，您需要在prebuilts/目录下安装emsdk</p>
+    <pre class="font- light" data-info data-role="codeBlock"><code class="fontColor">git clone https://github.com/juj/emsdk.git --depth=1
+cd emsdk
+git pull
+./emsdk update # this may not work, ignore it
+./emsdk install latest
+./emsdk activate latest
+安装之后，您需要将upstream目录复制到prebuilts/emsdk/emsdk，node复制到prebuilts/emsdk/node
+</code></pre>
+    <p class="fontColor">安装之后，目录结构当如：</p>
+    <pre class="font- light" data-info data-role="codeBlock"><code class="fontColor">prebuilts/emsdk
+├── prebuilts/emsdk/emsdk
+│   ├── prebuilts/emsdk/emsdk/bin
+│   ├── prebuilts/emsdk/emsdk/emscripten
+│   │   ├── prebuilts/emsdk/emsdk/emscripten/cache
+│   │   ├── prebuilts/emsdk/emsdk/emscripten/cmake
+│   │   ├── prebuilts/emsdk/emsdk/emscripten/docs
+│   │   ├── prebuilts/emsdk/emsdk/emscripten/media
+│   │   ├── prebuilts/emsdk/emsdk/emscripten/node_modules
+│   │   ├── prebuilts/emsdk/emsdk/emscripten/__pycache__
+│   │   ├── prebuilts/emsdk/emsdk/emscripten/src
+│   │   ├── prebuilts/emsdk/emsdk/emscripten/system
+│   │   ├── prebuilts/emsdk/emsdk/emscripten/tests
+│   │   ├── prebuilts/emsdk/emsdk/emscripten/third_party
+│   │   └── prebuilts/emsdk/emsdk/emscripten/tools
+│   ├── prebuilts/emsdk/emsdk/include
+│   │   └── prebuilts/emsdk/emsdk/include/c++
+│   └── prebuilts/emsdk/emsdk/lib
+│       └── prebuilts/emsdk/emsdk/lib/clang
+└── prebuilts/emsdk/node
+    └── prebuilts/emsdk/node/14.18.2_64bit
+        ├── prebuilts/emsdk/node/14.18.2_64bit/bin
+        ├── prebuilts/emsdk/node/14.18.2_64bit/include
+        ├── prebuilts/emsdk/node/14.18.2_64bit/lib
+        └── prebuilts/emsdk/node/14.18.2_64bit/share
+</code></pre>
+    <p class="fontColor">之后调用</p>
+    <pre class="font- light" data-info data-role="codeBlock"><code class="fontColor">./build.sh wasm进行编译，您需要将sh脚本进行部分修改，因为这个脚本内置了一些库的下载和解析方式
+</code></pre>
+</div>
+<script type="text/javascript">
+    window.onload = (() => {
+        let isDark = window.location.search;
+        if (isDark.indexOf("?") != -1) {
+            isDark = isDark.substr(1, isDark.length - 1);
+        }
+        if (isDark == 'true') {
+            document.getElementById("body").setAttribute('style', 'background-color:#272C34;')
+            let header = document.getElementsByClassName('fontColor')
+            for (let i = 0; i < header.length; i++) {
+                header[i].style.color = '#fff';
+            }
+            let lightBackGround = document.getElementsByClassName('light')
+            for (let i = 0; i < lightBackGround.length; i++) {
+                lightBackGround[i].style.backgroundColor = '#32373F'
+            }
+        }
+    })
+</script>
+</body>
+</html>

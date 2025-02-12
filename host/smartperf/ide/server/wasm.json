@@ -1,0 +1,28 @@
+{
+  "WasmFiles": [
+    {
+      "disPlayName": "common_mock",
+      "componentId": 0,
+      "pluginName": "mock-plugin",
+      "sampleInterval": 5000,
+      "wasmJsName": "trace_streamer_sdk_builtin.js",
+      "wasmName": "trace_streamer_sdk_builtin_wasm"
+    },
+    {
+      "disPlayName": "stream_mock",
+      "componentId": 1,
+      "pluginName": "mock_stream-plugin",
+      "sampleInterval": 5000,
+      "wasmJsName": "trace_streamer_sdk_builtin.js",
+      "wasmName": "trace_streamer_sdk_builtin_wasm"
+    },
+    {
+      "disPlayName": "standalone_mock",
+      "componentId": 2,
+      "pluginName": "mock_standalone-plugin",
+      "sampleInterval": 5000,
+      "wasmJsName": "trace_streamer_sdk_builtin.js",
+      "wasmName": "trace_streamer_sdk_builtin_wasm"
+    }
+  ]
+}

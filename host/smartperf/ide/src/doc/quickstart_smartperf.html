@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>网页加载trace说明</title>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <style>
+        code[class*="font-"],
+        pre[class*="font-"] {
+            text-align: left;
+            color: #333333;
+            background: none;
+            word-spacing: normal;
+            white-space: pre;
+            word-break: normal;
+            word-wrap: normal;
+            line-height: 1.5;
+            -moz-hyphens: none;
+            -ms-hyphens: none;
+            -o-tab-size: 8;
+            tab-size: 8;
+            -moz-tab-size: 8;
+            -webkit-hyphens: none;
+            hyphens: none;
+            font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+        }
+
+        pre[class*="font-"] {
+            border-radius: 3px;
+            background: #F5F5F5;
+            padding: 0.8em;
+            overflow: auto;
+        }
+
+        :not(pre) > code[class*="font-"] {
+            white-space: normal;
+            background: #F5F5F5;
+            padding: 0.2em;
+            border-radius: 0.3em;
+        }
+
+        .temporary.cdata {
+            color: #183690;
+        }
+
+        .temporary.comment,
+        .temporary.blockquote {
+            color: #969897;
+        }
+
+        .temporary.doctype,
+        .temporary.punctuation,
+        .temporary.variable,
+        .temporary.macro.property {
+            color: #333333;
+        }
+
+        .temporary.string,
+        .temporary.url,
+        .temporary.regex,
+        .temporary.attr-value {
+            color: #183690;
+        }
+
+        .temporary.operator,
+        .temporary.important,
+        .temporary.keyword,
+        .temporary.rule,
+        .temporary.builtin {
+            color: #a71d5c;
+        }
+
+        .temporary.atrule,
+        .temporary.constant,
+        .temporary.symbol,
+        .temporary.command,
+        .temporary.property,
+        .temporary.number,
+        .temporary.boolean,
+        .temporary.entity,
+        .temporary.code {
+            color: #0086b2;
+        }
+
+        .temporary.tag,
+        .temporary.selector,
+        .temporary.prolog {
+            color: #63a35e;
+        }
+
+        .temporary.entity {
+            cursor: help;
+        }
+
+        .temporary.title,
+        .temporary.title .temporary.punctuation {
+            font-weight: bold;
+            color: #1d3e89;
+        }
+
+        .temporary.list {
+            color: #ed6a48;
+        }
+
+        .temporary.function,
+        .temporary.namespace,
+        .temporary.pseudo-element,
+        .temporary.class,
+        .temporary.class-name,
+        .temporary.pseudo-class,
+        .temporary.id,
+        .temporary.url-reference .temporary.variable,
+        .temporary.attr-name {
+            color: #795da2;
+        }
+
+        .temporary.inserted {
+            color: #55a535;
+            background-color: #eaffee;
+        }
+
+        .temporary.bold {
+            font-weight: bold;
+        }
+
+        .temporary.deleted {
+            color: #bd2c08;
+            background-color: #ffecea;
+        }
+
+        .font-json .temporary.property {
+            color: #183690;
+        }
+
+        .temporary.italic {
+            font-style: italic;
+        }
+
+        .font-markup .temporary.tag .temporary.punctuation {
+            color: #333333;
+        }
+
+        .font-yaml .temporary.atrule {
+            color: #63a35a;
+        }
+
+        code.font-css,
+        .font-css .temporary.function {
+            color: #0086b8;
+        }
+
+        code.font-yaml {
+            color: #183690;
+        }
+
+        .font-ruby .temporary.function {
+            color: #333333;
+        }
+
+        .font-markdown .temporary.url {
+            color: #795da2;
+        }
+
+        .font-makefile .temporary.variable {
+            color: #183690;
+        }
+
+        .font-makefile .temporary.builtin {
+            color: #0086b3;
+        }
+
+        .font-makefile .temporary.symbol {
+            color: #795da2;
+        }
+
+        .font-bash .temporary.keyword {
+            color: #0086b3;
+        }
+
+        pre[data-wire] {
+            padding: 1em 0 1em 2em;
+            position: relative;
+        }
+
+        pre[data-wire] .line-highlight-wrapper {
+            background-color: transparent;
+            top: 2px;
+            left: 2px;
+            display: block;
+            width: 100%;
+            position: absolute;
+        }
+
+        pre[data-wire] .line-highlight {
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            pointer-events: none;
+            margin-top: 3em;
+            background: hsla(25, 10%, 55%, .06);
+            background: linear-gradient(to right, hsla(25, 10%, 40%, .2) 80%, hsla(23, 24%, 52%, 0));
+            line-height: inherit;
+            white-space: pre;
+        }
+
+        pre[data-wire] .line-highlight:before,
+        pre[data-wire] .line-highlight[data-end]:after {
+            content: attr(data-start);
+            position: absolute;
+            background-color: hsla(22, 25%, 54%, .5);
+            min-width: 2em;
+            padding: 0 .6em 0 0;
+            top: 0.5em;
+            left: 0.4em;
+            color: hsl(22, 23%, 90%);
+            vertical-align: 0.3em;
+            border-radius: 10px;
+            text-shadow: none;
+            box-shadow: 0 2px white;
+            font: bold 60%/1.6 sans-serif;
+            text-align: center;
+        }
+
+        pre[data-wire] .line-highlight[data-end]:after {
+            bottom: 0.6em;
+            content: attr(data-end);
+            top: auto;
+        }
+
+        body > :first-child {
+            margin-top: 0px;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #FFFFFF;
+            font-size: 16px;
+            overflow: initial;
+            word-wrap: break-word;
+            box-sizing: border-box;
+        }
+
+        body h1, body h2, body h3, body h4, body h5 {
+            line-height: 1.2;
+            margin-bottom: 16px;
+            margin-top: 1em;
+            color: #000000;
+        }
+
+        body h1 {
+            font-weight: 300;
+            font-size: 2.25em;
+            padding-bottom: 0.3em
+        }
+
+        body h2 {
+            font-weight: 400;
+            padding-bottom: 0.3em;
+            font-size: 1.75em;
+        }
+
+        body h3 {
+            font-weight: 500;
+            font-size: 1.5em;
+        }
+
+        body h4 {
+            font-weight: 600;
+            font-size: 1.25em;
+        }
+
+        body h5 {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+
+        body strong {
+            color: #000000;
+        }
+
+        body h1, body h2, body h3, body h4, body h5 {
+            font-weight: 600;
+        }
+
+        body a:not([href]) {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        body a {
+            text-decoration: none;
+            color: #08c;
+        }
+
+        body a:hover {
+            color: #00a3f5;
+            text-decoration: none;
+        }
+
+        body > p {
+            margin-bottom: 16px;
+            margin-top: 0;
+            word-wrap: break-word;
+        }
+
+        body img {
+            max-width: 100%;
+        }
+
+        body > ul, body > ol {
+            margin-bottom: 16px;
+        }
+
+        body ul, body ol {
+            padding-left: 2em;
+        }
+
+        body ul ul, body ul ol, body ol ol, body ol ul {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        body ul.no-list, body ol.no-list {
+            padding: 0;
+            list-style-type: none;
+        }
+
+        body li.task-list-item {
+            list-style: none;
+        }
+
+        body li {
+            margin-bottom: 0;
+        }
+
+        body .task-list-item-checkbox {
+            vertical-align: middle;
+            margin: 0 .2em .25em -1.8em;
+        }
+
+        body li > p {
+            margin-bottom: 0;
+            margin-top: 0;
+        }
+
+        body .task-list-item-checkbox:hover {
+            cursor: pointer;
+        }
+
+        body blockquote {
+            color: #5c5c5c;
+            margin: 16px 0 0 0;
+            font-size: inherit;
+            padding: 0 15px;
+            background-color: #f0f0f0;
+            border-left: 4px solid #d6d6d6;
+        }
+
+        body blockquote > :first-child {
+            margin-top: 0;
+        }
+
+        body blockquote > :last-child {
+            margin-bottom: 0;
+        }
+
+        body hr {
+            margin: 32px 0 0 0;
+            height: 4px;
+            border: 0 none;
+            background-color: #d6d6d6;
+        }
+
+        body table {
+            display: block;
+            width: 100%;
+            margin: 10px 0 15px 0;
+            border-collapse: collapse;
+            border-spacing: 0;
+            word-break: normal;
+            overflow: auto;
+            word-break: keep-all;
+        }
+
+        body table th {
+            font-weight: bold;
+            color: #000000;
+        }
+
+        body table td, body table th {
+            padding: 6px 13px 0 0;
+            border: 1px solid #d6d6d6;
+        }
+
+        body dl {
+            padding: 0;
+        }
+
+        body dl dd {
+            padding: 0 16px 0 0;
+            margin-bottom: 16px;
+        }
+
+        body dl dt {
+            margin-top: 16px;
+            font-size: 1em;
+            padding: 0;
+            font-style: italic;
+            font-weight: bold;
+        }
+
+        body code {
+            color: #000000;
+            font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+            font-size: .85em !important;
+            background-color: #f0f0f0;
+            padding: 0.2em 0 0 0;
+            border-radius: 3px;
+        }
+
+        body code::before, body code::after {
+            content: "\00a0";
+            letter-spacing: -0.2em;
+        }
+
+        body pre > code {
+            font-size: 0.85em !important;
+            padding: 0;
+            margin: 0;
+            background: transparent;
+            word-break: normal;
+            white-space: pre;
+            border: 0;
+        }
+
+        body .highlight {
+            margin-bottom: 16px;
+        }
+
+        body .highlight pre, body pre {
+            border: #d6d6d6;
+            font-size: 0.85em !important;
+            line-height: 1.45;
+            border-radius: 3px;
+            padding: 1em;
+            overflow: auto;
+        }
+
+        body .highlight pre {
+            word-break: normal;
+            margin-bottom: 0;
+        }
+
+        body pre code, body pre tt {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+            display: inline;
+            max-width: initial;
+            overflow: initial;
+            line-height: inherit;
+            word-wrap: normal;
+            border: 0;
+        }
+
+        body pre code:before, body pre tt:before, body pre code:after, body pre tt:after {
+            content: normal;
+        }
+
+        body p, body blockquote, body ul, body ol, body dl, body pre {
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+
+        body kbd {
+            border: 1px solid #d6d6d6;
+            border-bottom: 2px solid #c7c7c7;
+            padding: 2px 4px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+            color: #000000;
+        }
+
+        @media print {
+            body {
+                background-color: #FFFFFF;
+            }
+
+            body h1, body h2, body h3, body h4, body h5 {
+                page-break-after: avoid;
+                color: #000000;
+            }
+
+            body blockquote {
+                color: #5c5c5c;
+            }
+
+            body pre {
+                page-break-inside: avoid;
+            }
+
+            body table {
+                display: table;
+            }
+
+            body img {
+                display: block;
+                max-width: 100%;
+                max-height: 100%;
+            }
+
+            body pre, body code {
+                white-space: pre;
+                word-wrap: break-word;
+            }
+        }
+
+        .md-preview {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .md-preview, .md-preview {
+            page-break-before: always;
+        }
+
+        .md-preview pre.figure-numbers {
+            position: relative;
+            counter-reset: linenumber;
+            padding-left: 3.6em;
+        }
+
+        .md-preview pre.figure-numbers .figure-numbers-rows {
+            top: 1em;
+            font-size: 100%;
+            left: 0;
+            width: 3em;
+            position: absolute;
+            pointer-events: none;
+            letter-spacing: -1px;
+            border-right: 1px solid #999999;
+            -webkit-user-select: none;
+            user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .md-preview pre.figure-numbers > code {
+            position: relative;
+        }
+
+        .md-preview pre.figure-numbers .figure-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999999;
+            display: block;
+            text-align: right;
+            padding-right: 0.8em;
+        }
+
+        .md-preview pre.figure-numbers .figure-numbers-rows > span {
+            display: block;
+            pointer-events: none;
+            counter-increment: linenumber;
+        }
+
+        .md-preview:not([for="preview"]) .code-block .btn-group {
+            display: none;
+        }
+
+        .md-preview:not([for="preview"]) .code-block .status {
+            display: none;
+        }
+
+        .md-preview:not([for="preview"]) .code-block .output-div {
+            margin-bottom: 16px;
+        }
+
+        .scrollbar-type::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollbar-type::-webkit-scrollbar-track {
+            background-color: transparent;
+            border-radius: 10px;
+        }
+
+        .scrollbar-type::-webkit-scrollbar-thumb {
+            border-radius: 5px;
+            border: 4px solid rgba(150, 150, 150, 0.65);
+            background-clip: content-box;
+            background-color: rgba(150, 150, 150, 0.65);
+        }
+
+        body[for="native-export"]:not([data-display-mode]) {
+            position: relative;
+            top: 0;
+            left: 0;
+            margin: 0;
+            padding: 0;
+            overflow: auto;
+            width: 100%;
+            height: 100%;
+        }
+
+        body[for="native-export"]:not([data-presentation-mode]) .md-preview {
+            position: relative;
+            top: 0;
+        }
+
+        @media screen and (min-width: 914px) {
+            body[for="native-export"]:not([data-presentation-mode]) .md-preview {
+                padding: 2em calc(50% - 457px + 2em);
+            }
+        }
+
+        @media screen and (max-width: 914px) {
+            body[for="native-export"]:not([data-presentation-mode]) .md-preview {
+                padding: 2em;
+            }
+        }
+
+        @media screen and (max-width: 450px) {
+            body[for="native-export"]:not([data-display-mode]) .md-preview {
+                font-size: 14px !important;
+                padding: 1em;
+            }
+        }
+
+        @media print {
+            body[for="native-export"]:not([data-presentation-mode]) #sidebarButton {
+                display: none;
+            }
+        }
+
+        body[for="native-export"]:not([data-presentation-mode]) #sidebarButton {
+            opacity: 0.5;
+            position: fixed;
+            bottom: 8px;
+            left: 8px;
+            z-index: 99;
+            width: 32px;
+            text-align: center;
+            font-size: 28px;
+            cursor: pointer;
+            color: inherit;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] #sidebarButton {
+            opacity: 1;
+        }
+
+        body[for="native-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc {
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 32px 0 48px 0;
+            width: 300px;
+            height: 100%;
+            font-size: 14px;
+            box-shadow: 0 0 4px rgba(150, 150, 150, 0.33);
+            box-sizing: border-box;
+            overflow: auto;
+            background-color: inherit;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc::-webkit-scrollbar-track {
+            background-color: transparent;
+            border-radius: 10px;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc::-webkit-scrollbar-thumb {
+            background-color: rgba(150, 150, 150, 0.65);
+            border-radius: 5px;
+            border: 4px solid rgba(150, 150, 150, 0.65);
+            background-clip: content-box;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc li {
+            margin-bottom: 0.8em;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc ul {
+            list-style-type: none;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc ul {
+            margin-top: 0.8em;
+            padding: 0 1.4em 0 0;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-sidebar-toc a {
+            text-decoration: none;
+        }
+
+        body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-preview {
+            padding: 2em calc(50% - 457px - 150px);
+            margin: 0;
+            box-sizing: border-box;
+            left: 300px;
+            width: calc(100% - 300px);
+        }
+
+        @media screen and (max-width: 450px) {
+            body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-preview {
+                width: 100%;
+            }
+        }
+
+        @media screen and (max-width: 1274px) {
+            body[for="native-export"]:not([data-display-mode])[sidebarToc] .md-preview {
+                padding: 2em;
+            }
+        }
+
+        body[for="native-export"]:not([data-display-mode]):not([sidebarToc]) .md-preview {
+            transform: translateX(-50%);
+            left: 50%;
+        }
+
+        body[for="native-export"]:not([data-display-mode]):not([sidebarToc]) .md-sidebar-toc {
+            display: none;
+        }
+
+    </style>
+</head>
+<body for="native-export" id="body">
+<div class="mume md-preview  ">
+    <h1 class="mume-header fontColor">网页加载trace说明</h1>
+
+    <h2 class="mume-header fontColor">1.Web页面加载文件入口</h2>
+    <p class="fontColor">将抓取的trace导入查看</p>
+    <p><img alt="GitHub Logo" src="../figures/opentrace.jpg"></p>
+    <p class="fontColor">说明：</p>
+    <ul class="fontColor">
+        <li>Open trace file：导入离线trace文件入口</li>
+        <li>Record new trace：抓取新的trace文件入口</li>
+    </ul>
+    <h2 class="mume-header fontColor">2.导入文件后显示页面</h2>
+
+    <p class="fontColor"><img alt="GitHub Logo" src="../figures/trace.jpg"><br>
+        说明：</p>
+    <ul class="fontColor">
+        <li>操作说明：在当前页面可以通过键盘上的wasd四个键位操纵当前的时间轴进行缩放，w放大，s为缩小，a为左移，d为右移。</li>
+    </ul>
+    <h2 class="mume-header fontColor">trace功能介绍</h2>
+
+    <p class="fontColor">trace 模块从上往下主要展示时间轴和cpu使用率、cpu使用情况、进程间通讯数据的方法调用情况、进程、线程和方法调用情况</p>
+    <h3 class="mume-header fontColor">1. 时间轴和cpu使用率</h3>
+
+    <p class="fontColor"><img alt="GitHub Logo" src="../figures/time.jpg"><br>
+        最上方带刻度的为时间轴，主要展示当前抓取数据的总时长和时间刻度的分布情况，如上图所示，左下角展示总时长，<br>
+        中间区域展示的是抓取数据时间段内的cpu使用率，颜色越深代表cpu使用率越高，颜色越浅代表cpu使用率越低。<br>
+        <img alt="GitHub Logo" src="../figures/highlit.jpg"><br>
+        在白色背景时间轴区域内可以点击后拖拽鼠标，可以对从鼠标按下到拖拽完成鼠标松开的区域内的数据进行筛选，高亮显示的部分为当前所选区域，如上图所示
+    </p>
+    <h3 class="mume-header fontColor">2.cpu使用情况</h3>
+
+    <p><img alt="GitHub Logo" src="../figures/cpu.jpg"></p>
+    <p class="fontColor">如上图所示，当前抓取数据有4个cpu工作，前四组数据对应的是当前调用cpu的线程和对应的进程情况，以颜色作为区分。后四组数据则为cpu的使用频率信息。鼠标移动到相应的线程上还会将当前选中的进程信息全部置为高亮，其他的进程会置灰，如下图所示<br>
+        <img alt="GitHub Logo" src="../figures/gray.jpg"></p>
+    <h4 class="mume-header fontColor">2.1.cpu使用情况的框选功能</h4>
+
+    <p class="fontColor">可以对cpu的数据进行框选，框选后在最下方的弹出层中会展示框选数据的统计表格,总共有七个tab页<br>
+        CPU by thread的Tab页，主要显示了在框选时间区间内的进程名，进程号，线程名，线程号，总运行时长，平均运行时长和调度次数信息<br>
+        <img alt="GitHub Logo" src="../figures/cpubythread.jpg"><br>
+        CPU by process的Tab页，主要显示了在框选时间区间内的进程名，进程号，总运行时长，平均运行时长和调度次数信息<br>
+        <img alt="GitHub Logo" src="../figures/cpubyprocess.jpg"><br>
+        CPUUsage的Tab页，主要显示了在框选时间区间内，该频率时间占比前三的信息<br>
+        <img alt="GitHub Logo" src="../figures/cpusage.jpg"></p>
+        States List的Tab页，按状态>进程>线程的维度去统计，需要呈现该状态的下线程名，进入该状态次数、该状态下时长、最大最小时长，平均时长、最大时长<br>
+        <img alt="GitHub Logo" src="../figures/StatesList.jpg"></p>
+        Switches List的Tab页，按照进程>线程>状态、统计对应状态下的次数<br>
+        <img alt="GitHub Logo" src="../figures/Switchlist.jpg"></p>
+        Thread States的Tab页，按进程>线程>状态的维度去统计，需要呈现该状态的下线程名，进入该状态次数、该状态下时长、最小时长，平均时长、最大时长<br>
+        <img alt="GitHub Logo" src="../figures/threadstates.jpg"></p>
+        Thread Switches的Tab页，按照状态>进程>线程、统计对应状态下的次数<br>
+        <img alt="GitHub Logo" src="../figures/threadswitches.jpg"></p>
+        States List,Switches List,Thread States,Thread Switches的4个Tab页，点击移动到某一行，鼠标会变成一个小手的标志，点击一下，就会进入辅助信息界面，会将选中行的辅助信息展示出来，包括开始时间，进程，线程，线程状态，对应的CPU，优先级等信息如下图<br>
+        <img alt="GitHub Logo" src="../figures/details.jpg"></p>
+
+    <h4 class="mume-header fontColor">2.2.cpu使用情况的单选功能</h4>
+
+    <p class="fontColor">单选CPU使用情况数据，单击方法会在选中的方法外层加上深色边框，能够突出当前选中色块，弹出层中会展示当前CPU上的进程名，线程名，开始时间和运行时长，线程运行状态等信息<br>
+        <img alt="GitHub Logo" src="../figures/cpuclick.jpg"></p>
+    <h3 class="mume-header fontColor">3.FPS数据</h3>
+
+    <p class="fontColor">FPS是帧率的显示，每秒产生画面的个数<br>
+        <img alt="GitHub Logo" src="../figures/fps.jpg"></p>
+    <h4 class="mume-header fontColor">3.1FPS的框选功能</h4>
+
+    <p class="fontColor">可以对fps的数据进行框选，框选后在最下方的弹出层中会展示框选时间区间内的统计表格,主要显示了time(时间)，FPS(帧率)<br>
+        <img alt="GitHub Logo" src="../figures/fpsselect.jpg"></p>
+    <h4 class="mume-header fontColor">3.2.FPS的鼠标悬浮功能</h4>
+    <p class="fontColor">鼠标移动到帧率的柱状图上，悬浮框会显示当前时间的FPS的值<br>
+        <img alt="GitHub Logo" src="../figures/fpstip.jpg"></p>
+    <h3 class="mume-header fontColor">4.进程,线程和方法数据</h3>
+
+    <p class="fontColor">下图是进程数据，左边部分展示进程名称和id<br>
+        <img alt="GitHub Logo" src="../figures/process.jpg"><br>
+        点击进程名前面向下箭头可以展开对应的线程进行查看，展开后的线程如下图，如果存在堆内存占用情况，就会显示在第一行，如果出现两个名字和id一样的线程，则第一个为线程的使用情况，第二为线程内的方法栈调用情况<br>
+        <img alt="GitHub Logo" src="../figures/threadinfo.jpg"></p>
+    <h4 class="mume-heade fontColor">
+        4.1进程,线程和方法数据的框选功能</h4>
+
+    <p class="fontColor">可以对线程的数据进行框选，框选后在最下方的弹出层中会展示框选数据的统计表格，包含线程运行状态，线程调用栈的统计情况。当框选的数据中同时存在线程运行状态和线程调用栈数据，下方的弹出层中就会出现多个tab选项，可以进行切换</p>
+    <p class="fontColor">下图是线程运行状态框选统计信息,包括进程名，进程号，线程名，线程号，线程状态，状态持续时间，平均持续时间，该线程状态发生的次数<br>
+        <img alt="GitHub Logo" src="../figures/threadselect.jpg"></p>
+    <p class="fontColor">下图是线程调用栈框选统计信息,包括方法名，持续时间，平均持续时间，调用的次数<br>
+        <img alt="GitHub Logo" src="../figures/callstackselect.jpg"></p>
+    <h4 class="mume-header fontColor">
+        4.2进程,线程和方法数据的单选功能</h4>
+
+    <p class="fontColor">单选线程的state数据时，会展示当前选中线程的状态数据，开始时间和持续时长，线程状态，所在进程名称、<br>
+        <img alt="GitHub Logo" src="../figures/threadclick.jpg"><br>
+        单选调用栈数据，单击方法会在选中的方法外层加上黑色边框，能够突出当前选中的方法，弹出层中会展示当前方法的名称、开始时间和运行时长信息。<br>
+        <img alt="GitHub Logo" src="../figures/callstackclick.jpg"></p>
+
+    <h4 class="mume-header fontColor">
+        4.3.线程的跳转功能</h4>
+    <p class="fontColor">点击画红框处的带箭头的标志，会从CPU的线程概览视图跳转到线程的详情视图，同时从线程的详情视图也能跳转到CPU的线程概览视图<br>
+        <img alt="GitHub Logo" src="../figures/jumpthread.jpg"><br>
+    <h3 class="mume-header fontColor">5.trace的其他功能</h3>
+    <h4 class="mume-header fontColor">
+        5.1.小旗标志的功能</h4>
+    <p class="fontColor">将选中数据的时间点通过小旗的方式在时间轴上展示，直观的展示选中数据的时间<br>
+        <img alt="GitHub Logo" src="../figures/flag.jpg"><br>
+        在下方输入空输入文字:我是trace,可以给小旗打备注<br>
+        <img alt="GitHub Logo" src="../figures/flaginput.jpg"><br>
+    <h4 class="mume-header fontColor">
+        5.2.收藏置顶功能</h4>
+    <p class="fontColor">鼠标移动到某个页签，会出现星形的标志，点击该星形，可以将该行收藏置顶<br>
+        <img alt="GitHub Logo" src="../figures/stars.jpg"><br>
+    <h4 class="mume-header fontColor">
+        5.3.勾选功能</h4>
+    <p class="fontColor">框选某一区域，该区域左边会出现CheckBox的复选框。选中的区域的复选框会出现打勾的状态。可以取消勾选，也可以重新勾选<br>
+        <img alt="GitHub Logo" src="../figures/checkbox.jpg"><br>
+    <h4 class="mume-header fontColor">
+        5.4.搜索功能</h4>
+    <p class="fontColor">在搜索框中，可以输入线程，线程号等搜索自己想要的信息,搜索完成会高亮显示<br>
+        <img alt="GitHub Logo" src="../figures/search.jpg"><br>
+    <p class="fontColor">在搜索框中输入调用栈的方法名，会跳转到对应的调用栈<br>
+        <img alt="GitHub Logo" src="../figures/searchcallstack.jpg"><br>
+    <h4 class="mume-header fontColor">
+        5.5.M键测量功能</h4>
+    <p class="fontColor">放大trace中的色块,选中色块,键盘按下M，会出现像尺子一样的形状<br>
+        <img alt="GitHub Logo" src="../figures/M.jpg"><br>
+</div>
+
+<script type="text/javascript">
+    window.onload = (() => {
+        let isDark = window.location.search;
+        if (isDark.indexOf("?") != -1) {
+            isDark = isDark.substr(1, isDark.length - 1);
+        }
+        if (isDark == 'true') {
+            document.getElementById("body").setAttribute('style', 'background-color:#272C34;')
+            let header = document.getElementsByClassName('fontColor')
+            for (let i = 0; i < header.length; i++) {
+                header[i].style.color = '#fff';
+            }
+        }
+    })
+</script>
+</body>
+</html>
