@@ -1,0 +1,612 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021-2023. All rights reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "hook_manager.h"
+
+#include <limits>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include "command_poller.h"
+#include "common.h"
+#include "epoll_event_poller.h"
+#include "event_notifier.h"
+#include "hook_common.h"
+#include "hook_service.h"
+#include "init_param.h"
+#include "logging.h"
+#include "plugin_service_types.pb.h"
+#include "share_memory_allocator.h"
+#include "utilities.h"
+#include "virtual_runtime.h"
+#include "hook_common.h"
+#include "common.h"
+#include "native_memory_profiler_sa_service.h"
+
+namespace OHOS::Developtools::NativeDaemon {
+namespace {
+constexpr int DEFAULT_EVENT_POLLING_INTERVAL = 5000;
+constexpr uint32_t PAGE_BYTES = 4096;
+std::shared_ptr<Writer> g_buffWriter;
+const std::string STARTUP = "startup:";
+const std::string PARAM_NAME = "libc.hook_mode";
+constexpr int SIGNAL_START_HOOK = 36;
+constexpr int SIGNAL_STOP_HOOK = 37;
+const std::string VERSION = "1.02";
+constexpr int32_t RESPONSE_MAX_PID_COUNT = 8;
+constexpr int32_t MAX_PID_COUNT = 4;
+}
+
+bool HookManager::CheckProcess()
+{
+    if (hookConfig_.pid() > 0) {
+        hookConfig_.add_expand_pids(hookConfig_.pid());
+    }
+    std::set<int32_t> pidCache;
+    for (const auto& pid : hookConfig_.expand_pids()) {
+        if (pid > 0) {
+            struct stat statBuf;
+            std::string pidPath = "/proc/" + std::to_string(pid) + "/status";
+            if (stat(pidPath.c_str(), &statBuf) != 0) {
+                PROFILER_LOG_ERROR(LOG_CORE, "%s: hook process does not exist", __func__);
+                return false;
+            } else {
+                auto [iter, isExist] = pidCache.emplace(pid);
+                if (isExist) {
+                    hookCtx_.emplace_back(std::make_shared<HookManagerCtx>(pid));
+                    PROFILER_LOG_INFO(LOG_CORE, "hook context: pid: %d", pid);
+                }
+                continue;
+            }
+        }
+    }
+
+    if (!hookConfig_.process_name().empty() && !CheckProcessName()) {
+        return false;
+    }
+
+    if (hookConfig_.response_library_mode()) {
+        if (hookCtx_.size() > RESPONSE_MAX_PID_COUNT) {
+            PROFILER_LOG_ERROR(LOG_CORE, "%s: The maximum allowed is to set %d PIDs.",
+                               __func__, RESPONSE_MAX_PID_COUNT);
+            return false;
+        }
+    } else {
+        if (hookCtx_.size() > MAX_PID_COUNT) {
+            PROFILER_LOG_ERROR(LOG_CORE, "%s: The maximum allowed is to set %d PIDs.", __func__, MAX_PID_COUNT);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool HookManager::CheckProcessName()
+{
+    int pidValue = -1;
+    const std::string processName = hookConfig_.process_name();
+    bool isExist = COMMON::IsProcessExist(processName, pidValue);
+    if (hookConfig_.startup_mode() || !isExist) {
+        PROFILER_LOG_INFO(LOG_CORE, "Wait process %s start or restart, set param", hookConfig_.process_name().c_str());
+        std::string cmd = STARTUP + hookConfig_.process_name();
+        int ret = SystemSetParameter(PARAM_NAME.c_str(), cmd.c_str());
+        if (ret < 0) {
+            PROFILER_LOG_ERROR(LOG_CORE, "set param failed, please manually set param and start process(%s)",
+                               hookConfig_.process_name().c_str());
+        } else {
+            PROFILER_LOG_INFO(LOG_CORE, "set param success, please start process(%s)",
+                              hookConfig_.process_name().c_str());
+            hookCtx_.emplace_back(std::make_shared<HookManagerCtx>(hookConfig_.process_name()));
+        }
+    } else if (pidValue != -1) {
+        PROFILER_LOG_INFO(LOG_CORE, "Process %s exist, pid = %d", hookConfig_.process_name().c_str(), pidValue);
+        for (const auto& item : hookCtx_) {
+            if (item->pid == pidValue) {
+                return true;
+            }
+        }
+        hookCtx_.emplace_back(std::make_shared<HookManagerCtx>(pidValue));
+    } else {
+        PROFILER_LOG_ERROR(LOG_CORE, "The startup mode parameter is not set, name: %s",
+                           hookConfig_.process_name().c_str());
+        return false;
+    }
+    return true;
+}
+
+void HookManager::SetCommandPoller(const std::shared_ptr<CommandPoller>& p)
+{
+    commandPoller_ = p;
+}
+
+bool HookManager::RegisterAgentPlugin(const std::string& pluginPath)
+{
+    RegisterPluginRequest request;
+    request.set_request_id(commandPoller_->GetRequestId());
+    request.set_path(pluginPath);
+    request.set_sha256("");
+    request.set_name(pluginPath);
+    request.set_buffer_size_hint(0);
+    RegisterPluginResponse response;
+
+    if (commandPoller_->RegisterPlugin(request, response)) {
+        if (response.status() == ResponseStatus::OK) {
+            PROFILER_LOG_DEBUG(LOG_CORE, "response.plugin_id() = %d", response.plugin_id());
+            agentIndex_ = response.plugin_id();
+            PROFILER_LOG_DEBUG(LOG_CORE, "RegisterPlugin OK");
+        } else {
+            PROFILER_LOG_DEBUG(LOG_CORE, "RegisterPlugin FAIL 1");
+            return false;
+        }
+    } else {
+        PROFILER_LOG_DEBUG(LOG_CORE, "RegisterPlugin FAIL 2");
+        return false;
+    }
+
+    return true;
+}
+
+bool HookManager::UnregisterAgentPlugin(const std::string& pluginPath)
+{
+    UnregisterPluginRequest request;
+    request.set_request_id(commandPoller_->GetRequestId());
+    request.set_plugin_id(agentIndex_);
+    UnregisterPluginResponse response;
+    if (commandPoller_->UnregisterPlugin(request, response)) {
+        CHECK_TRUE(response.status() == ResponseStatus::OK, false, "UnregisterPlugin FAIL 1");
+    } else {
+        PROFILER_LOG_DEBUG(LOG_CORE, "UnregisterPlugin FAIL 2");
+        return false;
+    }
+    agentIndex_ = -1;
+
+    return true;
+}
+
+bool HookManager::LoadPlugin(const std::string& pluginPath)
+{
+    return true;
+}
+
+bool HookManager::UnloadPlugin(const std::string& pluginPath)
+{
+    return true;
+}
+
+bool HookManager::UnloadPlugin(const uint32_t pluginId)
+{
+    return true;
+}
+
+void HookManager::GetClientConfig(ClientConfig& clientConfig)
+{
+    clientConfig.shareMemorySize = static_cast<uint32_t>(hookConfig_.smb_pages() * PAGE_BYTES);
+    clientConfig.filterSize = static_cast<int32_t>(hookConfig_.filter_size());
+    clientConfig.clockId = COMMON::GetClockId(hookConfig_.clock());
+    clientConfig.maxStackDepth = hookConfig_.max_stack_depth();
+    clientConfig.mallocDisable = hookConfig_.malloc_disable();
+    clientConfig.mmapDisable = hookConfig_.mmap_disable();
+    clientConfig.freeStackData = hookConfig_.free_stack_report();
+    clientConfig.munmapStackData = hookConfig_.munmap_stack_report();
+    clientConfig.fpunwind = hookConfig_.fp_unwind();
+    clientConfig.isBlocked = hookConfig_.blocked();
+    clientConfig.memtraceEnable = hookConfig_.memtrace_enable();
+    clientConfig.sampleInterval = hookConfig_.sample_interval();
+    clientConfig.responseLibraryMode = hookConfig_.response_library_mode();
+}
+
+bool HookManager::HandleHookContext(const std::shared_ptr<HookManagerCtx>& ctx)
+{
+    if (ctx == nullptr) {
+        return false;
+    }
+    if (ctx->pid > 0) {
+        ctx->smbName = "hooknativesmb_" + std::to_string(ctx->pid);
+    } else if (!ctx->processName.empty()) {
+        ctx->smbName = "hooknativesmb_" + ctx->processName;
+    } else {
+        PROFILER_LOG_ERROR(LOG_CORE, "HandleHookContext context error, pid: %d, process name: %s",
+            ctx->pid, ctx->processName.c_str());
+        return false;
+    }
+    // create smb and eventNotifier
+    uint32_t bufferSize = static_cast<uint32_t>(hookConfig_.smb_pages()) * PAGE_BYTES; /* bufferConfig.pages() */
+    ctx->shareMemoryBlock = ShareMemoryAllocator::GetInstance().CreateMemoryBlockLocal(ctx->smbName, bufferSize);
+    CHECK_TRUE(ctx->shareMemoryBlock != nullptr, false, "CreateMemoryBlockLocal FAIL %s", ctx->smbName.c_str());
+
+    ctx->eventNotifier = EventNotifier::Create(0, EventNotifier::NONBLOCK);
+    CHECK_NOTNULL(ctx->eventNotifier, false, "create EventNotifier for %s failed!", ctx->smbName.c_str());
+
+    // start event poller task
+    ctx->eventPoller = std::make_unique<EpollEventPoller>(DEFAULT_EVENT_POLLING_INTERVAL);
+    CHECK_NOTNULL(ctx->eventPoller, false, "create event poller FAILED!");
+
+    ctx->eventPoller->Init();
+    ctx->eventPoller->Start();
+
+    PROFILER_LOG_INFO(LOG_CORE, "hookservice smbFd = %d, eventFd = %d\n", ctx->shareMemoryBlock->GetfileDescriptor(),
+                      ctx->eventNotifier->GetFd());
+
+    ctx->isRecordAccurately = hookConfig_.record_accurately();
+    PROFILER_LOG_INFO(LOG_CORE, "hookConfig filter size = %d, malloc disable = %d mmap disable = %d",
+        hookConfig_.filter_size(), hookConfig_.malloc_disable(), hookConfig_.mmap_disable());
+    PROFILER_LOG_INFO(LOG_CORE, "hookConfig fp unwind = %d, max stack depth = %d, record_accurately=%d",
+        hookConfig_.fp_unwind(), hookConfig_.max_stack_depth(), ctx->isRecordAccurately);
+    PROFILER_LOG_INFO(LOG_CORE, "hookConfig  offline_symbolization = %d", hookConfig_.offline_symbolization());
+
+    clockid_t pluginDataClockId = COMMON::GetClockId(hookConfig_.clock());
+    if (noDataQueue_) {
+        ctx->stackPreprocess = std::make_shared<StackPreprocess>(nullptr, hookConfig_, pluginDataClockId,
+        fpHookData_, isHookStandalone_);
+        ctx->eventPoller->AddFileDescriptor(
+            ctx->eventNotifier->GetFd(),
+            std::bind(&StackPreprocess::TakeResultsFromShmem, ctx->stackPreprocess,
+            ctx->eventNotifier, ctx->shareMemoryBlock));
+    } else {
+        ctx->stackData = std::make_shared<StackDataRepeater>(STACK_DATA_SIZE);
+        CHECK_TRUE(ctx->stackData != nullptr, false, "Create StackDataRepeater FAIL");
+        ctx->stackPreprocess = std::make_shared<StackPreprocess>(ctx->stackData, hookConfig_, pluginDataClockId,
+        fpHookData_, isHookStandalone_);
+        ctx->eventPoller->AddFileDescriptor(
+            ctx->eventNotifier->GetFd(),
+            std::bind(&HookManager::ReadShareMemory, this, ctx));
+    }
+    CHECK_TRUE(ctx->stackPreprocess != nullptr, false, "Create StackPreprocess FAIL");
+    ctx->stackPreprocess->SetWriter(g_buffWriter);
+    ctx->stackPreprocess->SetSaServiceFlag(isSaService_);
+    return true;
+}
+
+bool HookManager::CreatePluginSession(const std::vector<ProfilerPluginConfig>& config)
+{
+    PROFILER_LOG_DEBUG(LOG_CORE, "CreatePluginSession");
+    // save config
+    if (!config.empty()) {
+        std::string cfgData = config[0].config_data();
+        if (hookConfig_.ParseFromArray(reinterpret_cast<const uint8_t*>(cfgData.c_str()), cfgData.size()) <= 0) {
+            PROFILER_LOG_ERROR(LOG_CORE, "%s: ParseFromArray failed", __func__);
+            return false;
+        }
+    }
+
+    int32_t uShortMax = (std::numeric_limits<unsigned short>::max)();
+    if (hookConfig_.filter_size() > uShortMax) {
+        PROFILER_LOG_WARN(LOG_CORE, "%s: filter size invalid(size exceed 65535), reset to 65535!", __func__);
+        hookConfig_.set_filter_size(uShortMax);
+    }
+    if (!CheckProcess()) { // Check and initialize the context for the target process.
+        return false;
+    }
+
+    if (hookConfig_.max_stack_depth() < DLOPEN_MIN_UNWIND_DEPTH) {
+        // set default max depth
+        hookConfig_.set_max_stack_depth(DLOPEN_MIN_UNWIND_DEPTH);
+    }
+#if defined(__arm__)
+    hookConfig_.set_fp_unwind(false); // if OS is 32-bit,set fp_unwind false.
+    hookConfig_.set_response_library_mode(false);
+#endif
+    if (hookConfig_.response_library_mode()) {
+        hookConfig_.set_fp_unwind(true);
+        hookConfig_.set_offline_symbolization(true);
+    }
+    // offlinem symbolization, callframe must be compressed
+    if (hookConfig_.offline_symbolization()) {
+        hookConfig_.set_callframe_compress(true);
+    }
+
+    // statistical reporting must be callframe compressed and accurate.
+    if (hookConfig_.statistics_interval() > 0) {
+        hookConfig_.set_callframe_compress(true);
+        hookConfig_.set_record_accurately(true);
+    }
+
+    // callframe compressed, string must be compressed.
+    if (hookConfig_.callframe_compress()) {
+        hookConfig_.set_string_compressed(true);
+    }
+
+    if (hookCtx_.empty()) {
+        PROFILER_LOG_ERROR(LOG_CORE, "HookManager no task");
+        return false;
+    }
+    if (hookConfig_.save_file() && !hookConfig_.file_name().empty()) {
+        fpHookData_ = fopen(hookConfig_.file_name().c_str(), "wb+");
+        if (fpHookData_ == nullptr) {
+            PROFILER_LOG_INFO(LOG_CORE, "fopen file %s fail", hookConfig_.file_name().c_str());
+            return false;
+        }
+    }
+    if (hookConfig_.fp_unwind() && hookConfig_.record_accurately()
+        && hookConfig_.blocked() && hookConfig_.offline_symbolization()
+        && hookConfig_.statistics_interval() > 0
+        && hookConfig_.sample_interval() > 1) {
+        noDataQueue_ = true;
+    }
+    for (const auto& item : hookCtx_) {
+        CHECK_TRUE(HandleHookContext(item), false, "handle hook context failed"); // Create the required resources.
+    }
+
+    if (!isSaService_) { // SA mode will start HookService in the service.
+        ClientConfig clientConfig;
+        GetClientConfig(clientConfig);
+        if (noDataQueue_) {
+            clientConfig.freeEventOnlyAddrEnable = true;
+        }
+        std::string clientConfigStr = clientConfig.ToString();
+        PROFILER_LOG_INFO(LOG_CORE, "send hook client config:%s\n", clientConfigStr.c_str());
+        hookService_ = std::make_shared<HookService>(clientConfig, shared_from_this());
+        CHECK_NOTNULL(hookService_, false, "HookService create failed!");
+    }
+
+    return true;
+}
+
+void HookManager::ReadShareMemory(const std::shared_ptr<HookManagerCtx>& hookCtx)
+{
+    CHECK_NOTNULL(hookCtx->shareMemoryBlock, NO_RETVAL, "smb is null!");
+    hookCtx->eventNotifier->Take();
+    int rawRealSize = 0;
+    while (true) {
+        auto rawStack = std::make_shared<StackDataRepeater::RawStack>();
+        bool ret = hookCtx->shareMemoryBlock->TakeData([&](const int8_t data[], uint32_t size) -> bool {
+            CHECK_TRUE(size >= sizeof(BaseStackRawData), false, "stack data invalid!");
+
+            rawStack->baseStackData = std::make_unique<uint8_t[]>(size);
+            CHECK_TRUE(memcpy_s(rawStack->baseStackData.get(), size, data, size) == EOK, false,
+                       "memcpy_s raw data failed!");
+
+            rawStack->stackConext = reinterpret_cast<BaseStackRawData*>(rawStack->baseStackData.get());
+            rawStack->data = rawStack->baseStackData.get() + sizeof(BaseStackRawData);
+            rawStack->reportFlag = true;
+            if (rawStack->stackConext->type == MEMORY_TAG || rawStack->stackConext->type == THREAD_NAME_MSG ||
+                rawStack->stackConext->type == MMAP_FILE_TYPE || rawStack->stackConext->type == PR_SET_VMA_MSG) {
+                return true;
+            }
+            rawStack->reduceStackFlag = false;
+            if (hookConfig_.fp_unwind()) {
+                rawStack->fpDepth = (size - sizeof(BaseStackRawData)) / sizeof(uint64_t);
+                return true;
+            } else {
+                rawRealSize = sizeof(BaseStackRawData) + MAX_REG_SIZE * sizeof(char);
+            }
+
+            rawStack->stackSize = size - rawRealSize;
+            if (rawStack->stackSize > 0) {
+                rawStack->stackData = rawStack->baseStackData.get() + rawRealSize;
+            }
+            return true;
+        });
+        if (!ret) {
+            break;
+        }
+        if (rawStack->stackConext->type == MEMORY_TAG) {
+            std::string tagName = reinterpret_cast<char*>(rawStack->data);
+            hookCtx->stackPreprocess->SaveMemTag(rawStack->stackConext->tagId, tagName);
+            continue;
+        }
+        if (!hookCtx->stackData->PutRawStack(rawStack, hookCtx->isRecordAccurately)) {
+            break;
+        }
+    }
+}
+
+bool HookManager::DestroyPluginSession(const std::vector<uint32_t>& pluginIds)
+{
+    // release hook service
+    hookService_ = nullptr;
+
+    for (const auto& item : hookCtx_) {
+        if (item->eventPoller != nullptr) {
+            PROFILER_LOG_ERROR(LOG_CORE, "eventPoller unset!");
+            if (item->eventNotifier != nullptr) {
+                item->eventPoller->RemoveFileDescriptor(item->eventNotifier->GetFd());
+            }
+            item->eventPoller->Stop();
+            item->eventPoller->Finalize();
+            item->eventPoller = nullptr;
+        }
+
+        if (item->shareMemoryBlock != nullptr) {
+            ShareMemoryAllocator::GetInstance().ReleaseMemoryBlockLocal(item->smbName);
+            item->shareMemoryBlock = nullptr;
+        }
+        item->eventNotifier = nullptr;
+        item->stackPreprocess = nullptr;
+        item->stackData = nullptr;
+    }
+    if (fpHookData_) {
+        fclose(fpHookData_);
+        fpHookData_ = nullptr;
+    }
+    return true;
+}
+
+bool HookManager::StartPluginSession(const std::vector<uint32_t>& pluginIds,
+                                     const std::vector<ProfilerPluginConfig>& config, PluginResult& result)
+{
+    UNUSED_PARAMETER(config);
+    if (hookCtx_.empty()) {
+        return false;
+    }
+    StartPluginSession();
+    return true;
+}
+
+bool HookManager::StopPluginSession(const std::vector<uint32_t>& pluginIds)
+{
+    if (hookCtx_.empty()) {
+        return false;
+    }
+    for (const auto& item : hookCtx_) {
+        if (item->pid > 0) {
+            PROFILER_LOG_INFO(LOG_CORE, "stop command : send 37 signal to process  %d", item->pid);
+            if (kill(item->pid, SIGNAL_STOP_HOOK) == -1) {
+                const int bufSize = 256;
+                char buf[bufSize] = {0};
+                strerror_r(errno, buf, bufSize);
+                PROFILER_LOG_ERROR(LOG_CORE, "send 37 signal to process %d , error = %s", item->pid, buf);
+            }
+        } else {
+            PROFILER_LOG_INFO(LOG_CORE, "StopPluginSession: pid(%d) is less or equal zero.", item->pid);
+        }
+        CHECK_TRUE(item->stackPreprocess != nullptr, false, "stop StackPreprocess FAIL");
+        item->stackPreprocess->StopTakeResults();
+        PROFILER_LOG_INFO(LOG_CORE, "StopTakeResults success");
+        if (hookConfig_.statistics_interval() > 0) {
+            item->stackPreprocess->FlushRecordStatistics();
+        }
+        if (item->stackData != nullptr) {
+            item->stackData->Close();
+        }
+    }
+
+    ResetStartupParam();
+    return true;
+}
+
+void HookManager::ResetStartupParam()
+{
+    const std::string resetParam = "startup:disabled";
+    if (hookConfig_.startup_mode()) {
+        int ret = SystemSetParameter(PARAM_NAME.c_str(), resetParam.c_str());
+        if (ret < 0) {
+            PROFILER_LOG_WARN(LOG_CORE, "set param failed, please reset param(%s)", PARAM_NAME.c_str());
+        } else {
+            PROFILER_LOG_INFO(LOG_CORE, "reset param success");
+        }
+    }
+}
+
+bool HookManager::ReportPluginBasicData(const std::vector<uint32_t>& pluginIds)
+{
+    return true;
+}
+
+bool HookManager::CreateWriter(std::string pluginName, uint32_t bufferSize, int smbFd, int eventFd,
+                               bool isProtobufSerialize)
+{
+    PROFILER_LOG_DEBUG(LOG_CORE, "agentIndex_ %d", agentIndex_);
+    RegisterWriter(std::make_shared<BufferWriter>(pluginName, VERSION, bufferSize, smbFd, eventFd, agentIndex_));
+    return true;
+}
+
+bool HookManager::ResetWriter(uint32_t pluginId)
+{
+    RegisterWriter(nullptr);
+    return true;
+}
+
+void HookManager::RegisterWriter(const std::shared_ptr<Writer> writer)
+{
+    g_buffWriter = writer;
+    return;
+}
+
+void HookManager::SetHookConfig(const NativeHookConfig& hookConfig)
+{
+    hookConfig_ = hookConfig;
+}
+
+void HookManager::SethookStandalone(bool HookStandalone)
+{
+    isHookStandalone_ = HookStandalone;
+}
+
+void HookManager::SetHookConfig(const std::shared_ptr<NativeMemoryProfilerSaConfig>& config)
+{
+    hookConfig_.set_pid(config->pid_);
+    if (!config->processName_.empty()) {
+        hookConfig_.set_process_name(config->processName_);
+    }
+    hookConfig_.set_filter_size(config->filterSize_);
+    hookConfig_.set_smb_pages(config->shareMemorySize_);
+    hookConfig_.set_max_stack_depth(config->maxStackDepth_);
+    hookConfig_.set_malloc_disable(config->mallocDisable_);
+    hookConfig_.set_mmap_disable(config->mmapDisable_);
+    hookConfig_.set_free_stack_report(config->freeStackData_);
+    hookConfig_.set_munmap_stack_report(config->munmapStackData_);
+    hookConfig_.set_malloc_free_matching_interval(config->mallocFreeMatchingInterval_);
+    hookConfig_.set_malloc_free_matching_cnt(config->mallocFreeMatchingCnt_);
+    hookConfig_.set_string_compressed(config->stringCompressed_);
+    hookConfig_.set_fp_unwind(config->fpUnwind_);
+    hookConfig_.set_blocked(config->blocked_);
+    hookConfig_.set_record_accurately(config->recordAccurately_);
+    hookConfig_.set_startup_mode(config->startupMode_);
+    hookConfig_.set_memtrace_enable(config->memtraceEnable_);
+    hookConfig_.set_offline_symbolization(config->offlineSymbolization_);
+    hookConfig_.set_callframe_compress(config->callframeCompress_);
+    hookConfig_.set_statistics_interval(config->statisticsInterval_);
+    hookConfig_.set_clock(COMMON::GetClockStr(config->clockId_));
+    hookConfig_.set_sample_interval(config->sampleInterval_);
+    hookConfig_.set_response_library_mode(config->responseLibraryMode_);
+}
+
+int32_t HookManager::CreatePluginSession()
+{
+    if (CreatePluginSession({})) {
+        return RET_OK;
+    }
+    return RET_ERR;
+}
+
+void HookManager::StartPluginSession()
+{
+    for (const auto& item : hookCtx_) {
+        if (item->stackPreprocess == nullptr) {
+            continue;
+        }
+        PROFILER_LOG_ERROR(LOG_CORE, "StartPluginSession name: %s", item->processName.c_str());
+        if (!noDataQueue_) {
+            item->stackPreprocess->StartTakeResults();
+        }
+        if (item->pid > 0) {
+            PROFILER_LOG_INFO(LOG_CORE, "start command : send 36 signal to process  %d", item->pid);
+            if (kill(item->pid, SIGNAL_START_HOOK) == -1) {
+                const int bufSize = 256;
+                char buf[bufSize] = {0};
+                strerror_r(errno, buf, bufSize);
+                PROFILER_LOG_ERROR(LOG_CORE, "send 36 signal error = %s", buf);
+            }
+        } else {
+            PROFILER_LOG_INFO(LOG_CORE, "StartPluginSession: pid(%d) is less or equal zero.", item->pid);
+        }
+    }
+}
+
+void HookManager::WriteHookConfig()
+{
+    for (const auto& item : hookCtx_) {
+        if (item == nullptr) {
+            PROFILER_LOG_ERROR(LOG_CORE, "HookManager WriteHookConfig failed");
+            return;
+        }
+        item->stackPreprocess->WriteHookConfig();
+    }
+}
+
+std::pair<int, int> HookManager::GetFds(int32_t pid, const std::string& name)
+{
+    for (const auto& item : hookCtx_) {
+        if (item->pid == pid || item->processName == name) {
+            if (item->pid == -1) {
+                item->pid = pid;
+            }
+            item->stackPreprocess->SetPid(pid);
+            return {item->eventNotifier->GetFd(), item->shareMemoryBlock->GetfileDescriptor()};
+        }
+    }
+    return {-1, -1};
+}
+}
