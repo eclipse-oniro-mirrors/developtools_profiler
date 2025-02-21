@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2023. All rights reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+
+enum NUM {
+    ZERO = 0;
+    ONE = 1;
+    TWO = 2;
+    THREE = 3;
+    FOUR = 4;
+}
+
+message SubMessage {
+    int32 vint_int32 = 1;
+    int64 vint_int64 = 2;
+    uint32 vint_uint32 = 3;
+    uint64 vint_uint64 = 4;
+}
+
+message ExampleMessage {
+    // https://developers.google.com/protocol-buffers/docs/encoding
+    // ID   Name    Used For
+    // 0    VARINT  int32, int64, uint32, uint64, sint32, sint64, bool, enum
+    int32 vint_int32 = 1;
+    int64 vint_int64 = 2;
+    uint32 vint_uint32 = 3;
+    uint64 vint_uint64 = 4;
+    sint32 vint_sint32 = 5;
+    sint64 vint_sint64 = 6;
+    bool vint_bool = 7;
+    NUM vint_enum = 8;
+
+    // 1    I64    fixed64, sfixed64, double
+    fixed64 I64_fixed64 = 11;
+    sfixed64 I64_sfixed64 = 12;
+    double I64_double = 13;
+
+    // 2    LEN    string, bytes, embedded messages, packed repeated fields
+    string LEN_string = 21;
+    bytes LEN_bytes = 22; // maybe need identified by protoC
+    SubMessage LEN_sub = 23;
+    // repeated sint32 repeated_signed_vint = 24; // repeated signed(zigzag) not supported in libprotobuf
+    repeated int32 LEN_repeated_packed_signed_vint = 25; // [packed = true]
+    repeated uint32 LEN_repeated_packed_unsigned_vint = 26; // [packed = true]
+    repeated fixed64 LEN_repeated_packed_fixed = 27; // [packed = true]
+    repeated SubMessage repeated_LEN_sub = 28;
+
+    // 5    I32    fixed32, sfixed32, float
+    fixed32 I32_fixed32 = 51;
+    sfixed32 I32_sfixed32 = 52;
+    float I32_float = 53;
+
+    // 6 oneof
+    oneof oneoffield {
+        fixed64 oneof_fixed64 = 61;
+        string oneof_string = 62;
+        SubMessage oneof_sub = 63;
+    }
+
+    repeated ExampleMessage repeated_Example = 100;
+
+}

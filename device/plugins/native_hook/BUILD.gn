@@ -1,0 +1,219 @@
+# Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("../../base/config.gni")
+
+config("hook_config") {
+  defines = [
+    "HAVE_LIBUNWIND=0",
+    "HAVE_LIBUNWINDER=1",
+    "HIPERF_DEBUG",
+    "CONFIG_NO_HILOG",
+  ]
+  defines += [ "target_cpu_${target_cpu}" ]
+  if (!is_asan) {
+    defines += [ "HOOK_ENABLE" ]
+  }
+}
+
+ohos_source_set("native_hook_source") {
+  use_exceptions = true
+  sources = [
+    "../../services/ipc/src/socket_context.cpp",
+    "../../services/ipc/src/unix_socket_client.cpp",
+    "../native_daemon/src/debug_logger.cpp",
+    "../native_daemon/src/get_thread_id.cpp",
+    "../native_daemon/src/register.cpp",
+    "../native_daemon/src/utilities.cpp",
+    "src/hook_client.cpp",
+    "src/hook_socket_client.cpp",
+    "src/runtime_stack_range.cpp",
+    "src/sampling.cpp",
+    "src/stack_writer.cpp",
+  ]
+  include_dirs = [
+    "./include",
+    "../api/include",
+    "../api/src",
+    "../../base/include/",
+    "../native_daemon/include",
+    "${OHOS_PROFILER_DIR}/interfaces/kits",
+    "${OHOS_PROFILER_DIR}/device/services/ipc/include",
+    "${OHOS_PROFILER_DIR}/device/services/shared_memory/include",
+  ]
+  public_configs = [
+    ":hook_config",
+    "${OHOS_PROFILER_DIR}/device/base:hiprofiler_test_config",
+  ]
+  deps = [
+    "${OHOS_PROFILER_DIR}/device/services/shared_memory:shared_memory_lite",
+    "../../base:hiprofiler_base",
+  ]
+  if (hiprofiler_use_libunwind) {
+    public_deps = [ "//third_party/libunwind:unwind_source_${target_cpu}" ]
+  }
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "ffrt:libffrt",
+    "hitrace:libhitracechain",
+    "init:libbegetutil",
+    "zlib:libz",
+  ]
+  if (hiprofiler_use_libunwinder) {
+    external_deps += [ "faultloggerd:libunwinder_static" ]
+  }
+
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    external_deps += [ "hilog:libhilog" ]
+  }
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+  defines += [ "NO_PROTOBUF" ]
+  cflags = [
+    "-Wno-error=inline-asm",
+    "-DPERF_TEST_DATA",
+    "-O3",
+  ]
+}
+
+ohos_shared_library("native_hook") {
+  output_name = "native_hook"
+  deps = [ ":native_hook_source" ]
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    external_deps = [ "hilog:libhilog" ]
+  }
+  version_script = "libnative_hook.map"
+  install_enable = true
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}
+
+ohos_executable("nativetest_c") {
+  output_name = "nativetest_c"
+  sources = [ "test/hook_test.c" ]
+
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    if (use_musl && !is_asan) {
+      defines += [ "HOOK_ENABLE" ]
+    }
+    external_deps = [ "hilog:libhilog" ]
+  }
+  cflags = [
+    "-Wno-error=inline-asm",
+    "-O3",
+  ]
+  external_deps += [ "bounds_checking_function:libsec_shared" ]
+  ldflags = [ "-rdynamic" ]
+  install_enable = false
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}
+
+ohos_executable("nativetest_cpp") {
+  output_name = "nativetest_cpp"
+  sources = [ "test/hook_test.cpp" ]
+
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    external_deps = [ "hilog:libhilog" ]
+  }
+
+  cflags = [
+    "-Wno-error=inline-asm",
+    "-O3",
+  ]
+  ldflags = [ "-rdynamic" ]
+
+  install_enable = false
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}
+
+ohos_shared_library("nativetest_so") {
+  output_name = "nativetest_so"
+  sources = [ "test/hook_so.cpp" ]
+
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    external_deps = [ "hilog:libhilog" ]
+  }
+
+  cflags = [
+    "-Wno-error=inline-asm",
+    "-O3",
+  ]
+
+  install_enable = false
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}
+
+ohos_executable("malloctest_cpp") {
+  output_name = "malloctest_cpp"
+  sources = [ "test/malloc_test.cpp" ]
+
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    external_deps = [ "hilog:libhilog" ]
+  }
+
+  cflags = [
+    "-Wno-error=inline-asm",
+    "-O3",
+  ]
+  external_deps += [ "bounds_checking_function:libsec_shared" ]
+  ldflags = [ "-rdynamic" ]
+  install_enable = false
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}
+
+ohos_executable("perf_test_data") {
+  output_name = "perf_test_data"
+  sources = [ "test/perf_test_data.cpp" ]
+
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    external_deps = [ "hilog:libhilog" ]
+  }
+
+  cflags = [ "-Wno-error=inline-asm" ]
+  install_enable = false
+  ldflags = [ "-rdynamic" ]
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}
+
+ohos_executable("statisticstest_cpp") {
+  output_name = "statisticstest_cpp"
+  sources = [ "test/statistics_test.cpp" ]
+
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    external_deps = [ "hilog:libhilog" ]
+  }
+
+  cflags = [
+    "-Wno-error=inline-asm",
+    "-O3",
+  ]
+  ldflags = [ "-rdynamic" ]
+  external_deps += [ "bounds_checking_function:libsec_shared" ]
+  install_enable = false
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}
