@@ -1,0 +1,242 @@
+/*
+ * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#include <cstdio>
+#include <thread>
+#include <cstring>
+#include "unistd.h"
+#include <fstream>
+#include <sstream>
+#include "include/smartperf_command.h"
+#include "include/editor_command.h"
+#include "include/profiler_fps.h"
+#include "include/client_control.h"
+#include "include/sp_utils.h"
+#include "include/sp_log.h"
+#include "include/common.h"
+#include "parameters.h"
+
+static std::string GetOptions(const std::vector<std::string> &argv)
+{
+    std::string str = "";
+    std::string strFlag;
+    bool isFill = false;
+    for (std::size_t i = 0; i < argv.size(); i++) {
+        if (!isFill) {
+            strFlag = argv[i];
+            if (strFlag.find("SP_daemon") != std::string::npos) {
+                isFill = true;
+            }
+        } else {
+            str += argv[i];
+            if (i + 1 != argv.size()) {
+                str += " ";
+            }
+        }
+    }
+    return str;
+}
+static void KeyInsert(std::set<std::string> &keysMap)
+{
+    keysMap.insert("editor");
+    keysMap.insert("profilerfps");
+    keysMap.insert("start");
+    keysMap.insert("stop");
+    keysMap.insert("screen");
+    keysMap.insert("clear");
+    keysMap.insert("server");
+    keysMap.insert("sections");
+    keysMap.insert("deviceinfo");
+    keysMap.insert("ohtestfps");
+    keysMap.insert("editorServer");
+    keysMap.insert("recordcapacity");
+}
+static bool g_checkCmdParam(std::vector<std::string> &argv, std::string &errorInfo)
+{
+    std::string str = GetOptions(argv);
+    std::set<std::string> keys; // Includes three parts "SP_daemon" CommandType and CommandHelp
+    if (str.empty()) {
+        return true;
+    }
+    // 'help' and 'version' start with "--" and are processed separately
+    if (str.find("--help") != std::string::npos || str.find("--version") != std::string::npos) {
+        std::vector<std::string> out;
+        OHOS::SmartPerf::SPUtils::StrSplit(str, "-", out);
+        if (out.size() != 1) {
+            errorInfo = "--help and --version cannot be used together with other options";
+            return false;
+        } else {
+            return true;
+        }
+    }
+    KeyInsert(keys);
+    if (argv[1].find("editorServer:") != std::string::npos) {
+        keys.insert(argv[1].substr(1).c_str());
+    }
+    for (auto a : OHOS::SmartPerf::COMMAND_MAP) {
+        keys.insert(a.first.substr(1)); // No prefix required '-'
+    }
+
+    /* ************The command line for the following parameters is not implemented****************** */
+    auto itr = keys.find("f1");
+    if (keys.end() != itr) {
+        keys.erase(itr);
+    }
+    itr = keys.find("f2");
+    if (keys.end() != itr) {
+        keys.erase(itr);
+    }
+    itr = keys.find("fl");
+    if (keys.end() != itr) {
+        keys.erase(itr);
+    }
+    itr = keys.find("ftl");
+    if (keys.end() != itr) {
+        keys.erase(itr);
+    }
+    return OHOS::SmartPerf::SPUtils::VeriyParameter(keys, str, errorInfo);
+}
+
+static void SocketStopCommand()
+{
+    OHOS::SmartPerf::ClientControl cc;
+    cc.SocketStop();
+}
+
+static void RecordCapacity()
+{
+    const std::string capacityRmPath = "/sys/class/power_supply/Battery/capacity_rm";
+    const std::string capacitySavePath = "/data/local/tmp/powerLeftRecord.csv";
+    std::string capacityString;
+    std::ifstream infile(capacitySavePath.c_str());
+
+    if (infile.is_open()) {
+        std::stringstream buffer;
+        int capacityLine = 0;
+        std::string line;
+        const int MAX_RECORD_COUNT = 100;
+        buffer << infile.rdbuf();
+        capacityString = buffer.str();
+        infile.close();
+
+        while (std::getline(buffer, line)) {
+            capacityLine++;
+        }
+        if (capacityLine == MAX_RECORD_COUNT) {
+            std::size_t pos = capacityString.find('\n');
+            if (pos != std::string::npos) {
+                capacityString = capacityString.substr(pos + 1);
+            }
+        }
+    }
+
+    std::ofstream outFile(capacitySavePath.c_str(), std::ios::out | std::ios::trunc);
+    if (!outFile.is_open()) {
+        std::cout << "Error opening capacity file!" << std::endl;
+        return;
+    }
+    std::string recordPower;
+    auto recordTime = std::to_string(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    OHOS::SmartPerf::SPUtils::LoadFile(capacityRmPath, recordPower);
+    std::cout << "recordTime: " << recordTime << std::endl << "recordPower: " << recordPower << std::endl;
+    capacityString += recordTime + "," + recordPower;
+    outFile << capacityString << std::endl;
+    if (outFile.fail()) {
+        const int bufSize = 256;
+        char buf[bufSize] = { 0 };
+        std::cout << "Error writing capacity failed:" << strerror_r(errno, buf, bufSize) << std::endl;
+    }
+    outFile.close();
+}
+
+static int ProcessSpecificParameter(int argc, char *argv[], std::vector<std::string> &vec)
+{
+    if (argc > 1 && strcmp(argv[1], "-editor") == 0) {
+        OHOS::SmartPerf::EditorCommand(argc, vec);
+        return 0;
+    } else if (argc > 1 && strcmp(argv[1], "-profilerfps") == 0) {
+        OHOS::SmartPerf::ProfilerFPS::GetInstance().GetFPS(vec);
+        return 0;
+    } else if (argc > 1 && strcmp(argv[1], "-start") == 0) {
+        std::string startStr = "";
+        std::string endStr = "";
+        std::string pidCmd = OHOS::SmartPerf::CMD_COMMAND_MAP.at(OHOS::SmartPerf::CmdCommand::PIDOF_SP);
+        OHOS::SmartPerf::SPUtils::LoadCmd(pidCmd, startStr);
+        OHOS::SmartPerf::ClientControl cc;
+        cc.StartSPDaemon();
+        OHOS::SmartPerf::SPUtils::LoadCmd(pidCmd, endStr);
+        std::vector<std::string> startParams;
+        std::vector<std::string> endParams;
+        OHOS::SmartPerf::SPUtils::StrSplit(startStr, " ", startParams);
+        OHOS::SmartPerf::SPUtils::StrSplit(endStr, " ", endParams);
+        std::string result;
+        for (int i = 2; i < argc; i++) {
+            result += argv[i];
+            if (i != argc - 1) {
+                result += " ";
+            }
+        }
+        if (startParams.size() == endParams.size()) {
+            std::cout << "The last collection is interrupted." << std::endl;
+            std::cout << "SP_daemon -start " << result << " started collecting..." << std::endl;
+        }
+        cc.SocketStart(result);
+        return 1;
+    } else if (argc > 1 && strcmp(argv[1], "-stop") == 0) {
+        SocketStopCommand();
+        return 1;
+    } else if (argc > 1 && strcmp(argv[1], "-deviceinfo") == 0) {
+        std::cout << OHOS::SmartPerf::SPUtils::GetDeviceInfoMap() << std::endl;
+        return 0;
+    } else if (argc > 1 && strcmp(argv[1], "-ohtestfps") == 0) {
+        OHOS::SmartPerf::ProfilerFPS::GetInstance().GetOhFps(vec);
+        return 0;
+    } else if (argc > 1 && strcmp(argv[1], "-recordcapacity") == 0) {
+        RecordCapacity();
+        return 0;
+    }
+
+    return 1;
+}
+
+int main(int argc, char *argv[])
+{
+    if (!OHOS::system::GetBoolParameter("const.security.developermode.state", true)) {
+        std::cout << "Not a development mode state" << std::endl;
+        return 0;
+    }
+    if (argc < 0) {
+        std::cout << "Invalid argument count" << std::endl;
+        return -1;
+    }
+    std::string errorInfo;
+    std::vector<std::string> vec;
+    const int maxExpectedArgs = 100;
+    for (int i = 0; i < argc && i < maxExpectedArgs; i++) {
+        vec.push_back(argv[i]);
+    }
+    if (!g_checkCmdParam(vec, errorInfo)) {
+        std::cout << "SP_daemon:" << errorInfo << std::endl <<
+             "Usage: SP_daemon [options] [arguments]" << std::endl << std::endl <<
+             "Try `SP_daemon --help' for more options." << std::endl;
+        return 0;
+    }
+    OHOS::SmartPerf::SPUtils::SetRkFlag();
+    if (ProcessSpecificParameter(argc, argv, vec) == 0) {
+        return 0;
+    }
+    OHOS::SmartPerf::SmartPerfCommand cmd(vec);
+    std::cout << cmd.ExecCommand() << std::endl;
+    return 0;
+}
