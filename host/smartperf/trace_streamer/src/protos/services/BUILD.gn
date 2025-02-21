@@ -1,0 +1,225 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("../protos.gni")
+
+proto_types_defines = [
+  "./common_types.proto",
+  "./plugin_service_types.proto",
+  "./profiler_service_types.proto",
+]
+
+plugin_services_defines = [ "./plugin_service.proto" ]
+
+profiler_services_defines = [ "./profiler_service.proto" ]
+
+#######################################################
+proto_out_dir = "$root_gen_dir/cpp/" + rebase_path(".", "//")
+proto_rel_out_dir = rebase_path(proto_out_dir, root_build_dir)
+print("proto_out_dir", proto_out_dir, proto_rel_out_dir)
+
+grpc_cpp_plugin = "$subsys_x64_out/grpc_cpp_plugin"
+ipc_cpp_plugin = "$subsys_x64_out/protoc_gen_ipc"
+
+#######################################################
+proto_types_codegen = []
+foreach(proto, proto_types_defines) {
+  name = get_path_info(proto, "name")
+  proto_types_codegen += [
+    "$proto_out_dir/$name.pb.h",
+    "$proto_out_dir/$name.pb.cc",
+  ]
+}
+
+action("service_types_proto_gen") {
+  script = "${OHOS_PROFILER_DIR}/build/protoc.sh"
+  sources = proto_types_defines
+  outputs = proto_types_codegen
+  args = [
+    "$libc_dir_proto",
+    "$root_output_dir_proto",
+    "--cpp_out",
+    "$proto_rel_out_dir",
+    "--proto_path",
+    rebase_path(".", root_build_dir),
+  ]
+  args += rebase_path(sources, root_build_dir)
+  deps = [
+    "${OHOS_PROFILER_3RDPARTY_GRPC_DIR}:grpc_cpp_plugin(${host_toolchain})",
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protoc(${host_toolchain})",
+  ]
+}
+
+config("service_types_proto_config") {
+  include_dirs = [ "$proto_out_dir" ]
+}
+
+ohos_source_set("service_types_proto") {
+  deps = [ ":service_types_proto_gen" ]
+  public_deps = [
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf",
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf_lite",
+  ]
+  include_dirs = [ "$proto_out_dir" ]
+  public_configs = [ ":service_types_proto_config" ]
+  sources = proto_types_codegen
+}
+
+ohos_source_set("service_types_proto_static") {
+  deps = [ ":service_types_proto_gen" ]
+  public_deps = [
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf_lite_static",
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf_static",
+  ]
+  include_dirs = [ "$proto_out_dir" ]
+  public_configs = [ ":service_types_proto_config" ]
+  sources = proto_types_codegen
+}
+
+#######################################################
+profiler_services_codegen = []
+foreach(proto, profiler_services_defines) {
+  name = get_path_info(proto, "name")
+  profiler_services_codegen += [
+    "$proto_out_dir/$name.pb.h",
+    "$proto_out_dir/$name.pb.cc",
+    "$proto_out_dir/$name.grpc.pb.h",
+    "$proto_out_dir/$name.grpc.pb.cc",
+  ]
+}
+
+action("profiler_services_proto_gen") {
+  script = "${OHOS_PROFILER_DIR}/build/protoc.sh"
+  sources = profiler_services_defines
+  outputs = profiler_services_codegen
+  args = [
+    "$libc_dir_proto",
+    "$root_output_dir_proto",
+    "--plugin=protoc-gen-grpc=$grpc_cpp_plugin",
+    "--grpc_out",
+    "$proto_rel_out_dir",
+    "--cpp_out",
+    "$proto_rel_out_dir",
+    "--proto_path",
+    rebase_path(".", root_build_dir),
+  ]
+  args += rebase_path(sources, root_build_dir)
+  deps = [
+    "${OHOS_PROFILER_3RDPARTY_GRPC_DIR}:grpc_cpp_plugin(${host_toolchain})",
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protoc(${host_toolchain})",
+  ]
+}
+
+config("profiler_services_proto_config") {
+  include_dirs = [ "$proto_out_dir" ]
+}
+
+ohos_source_set("profiler_services_proto") {
+  deps = [
+    ":profiler_services_proto_gen",
+    ":service_types_proto",
+  ]
+  public_deps = [
+    "${OHOS_PROFILER_3RDPARTY_GRPC_DIR}:grpc",
+    "${OHOS_PROFILER_3RDPARTY_GRPC_DIR}:grpcxx",
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf",
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf_lite",
+  ]
+  include_dirs = [ "$proto_out_dir" ]
+  public_configs = [ ":profiler_services_proto_config" ]
+  sources = profiler_services_codegen
+}
+
+#######################################################
+plugin_services_codegen = []
+foreach(proto, plugin_services_defines) {
+  name = get_path_info(proto, "name")
+  plugin_services_codegen += [
+    "$proto_out_dir/$name.pb.h",
+    "$proto_out_dir/$name.pb.cc",
+    "$proto_out_dir/$name.ipc.h",
+    "$proto_out_dir/$name.ipc.cc",
+  ]
+}
+
+action("plugin_services_proto_gen") {
+  script = "${OHOS_PROFILER_DIR}/build/protoc.sh"
+  sources = plugin_services_defines
+  outputs = plugin_services_codegen
+  args = [
+    "$libc_dir_proto",
+    "$root_output_dir_proto",
+    "--plugin=protoc-gen-ipc=$ipc_cpp_plugin",
+    "--ipc_out",
+    "$proto_rel_out_dir",
+    "--cpp_out",
+    "$proto_rel_out_dir",
+    "--proto_path",
+    rebase_path(".", root_build_dir),
+  ]
+  args += rebase_path(sources, root_build_dir)
+  deps = [
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protoc(${host_toolchain})",
+    "${OHOS_PROFILER_DIR}/device/services/ipc:protoc_gen_ipc(${host_toolchain})",
+  ]
+}
+
+config("plugin_services_proto_config") {
+  include_dirs = [ "$proto_out_dir" ]
+}
+
+ohos_source_set("plugin_services_proto") {
+  deps = [
+    ":plugin_services_proto_gen",
+    ":service_types_proto",
+  ]
+  public_deps = [
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf",
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf_lite",
+    "${OHOS_PROFILER_DIR}/device/services/ipc:ipc",
+  ]
+  include_dirs = [
+    "$proto_out_dir",
+    "${OHOS_PROFILER_DIR}/device/services/ipc/include",
+  ]
+  public_configs = [ ":plugin_services_proto_config" ]
+  sources = plugin_services_codegen
+}
+
+ohos_source_set("plugin_services_proto_static") {
+  deps = [
+    ":plugin_services_proto_gen",
+    ":service_types_proto_static",
+  ]
+  public_deps = [
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf_lite_static",
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf_static",
+    "${OHOS_PROFILER_DIR}/device/services/ipc:ipc",
+  ]
+  include_dirs = [
+    "$proto_out_dir",
+    "${OHOS_PROFILER_DIR}/device/services/ipc/include",
+  ]
+  public_configs = [ ":plugin_services_proto_config" ]
+  sources = plugin_services_codegen
+}
+
+#######################################################
+ohos_source_set("proto_services_cpp") {
+  public_deps = [
+    ":plugin_services_proto",
+    ":profiler_services_proto",
+    ":service_types_proto",
+  ]
+}

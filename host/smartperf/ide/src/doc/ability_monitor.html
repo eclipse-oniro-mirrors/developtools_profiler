@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ability Monitor</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        dataType[class*="font-"],
+        pre[class*="font-"] {
+            color: #333333;
+            background: none;
+            font-family: Helvetica;
+            line-height: 1.6;
+            text-align: left;
+            white-space: pre;
+            -moz-tab-size: 9;
+            -o-tab-size: 9;
+            tab-size: 8;
+        }
+
+        pre[class*="font-"] {
+            border-radius: 3px;
+            background: #F5F5F5;
+            padding: 0.8em;
+            overflow: auto;
+        }
+
+        :not(pre) > dataType[class*="font-"] {
+            white-space: normal;
+            background: #F5F5F5;
+            padding: 0.2em;
+            border-radius: 0.3em;
+        }
+
+        .temporary.cdata {
+            color: #183690;
+        }
+
+        .temporary.comment,
+        .temporary.blockType {
+            color: #969897;
+        }
+
+        .temporary.doctype,
+        .temporary.punctuation,
+        .temporary.variable,
+        .temporary.macro.property {
+            color: #333333;
+        }
+
+
+        .temporary.string,
+        .temporary.url,
+        .temporary.regex,
+        .temporary.attr-value {
+            color: #183690;
+        }
+
+        .temporary.operator,
+        .temporary.important,
+        .temporary.keyword,
+        .temporary.rule,
+        .temporary.builtin {
+            color: #a71d5c;
+        }
+
+        .temporary.atrule,
+        .temporary.constant,
+        .temporary.symbol,
+        .temporary.command,
+        .temporary.property,
+        .temporary.number,
+        .temporary.boolean,
+        .temporary.entity,
+        .temporary.dataType {
+            color: #0086b2;
+        }
+
+        .temporary.tag,
+        .temporary.selector,
+        .temporary.prolog {
+            color: #63a35e;
+        }
+
+        .temporary.entity {
+            cursor: help;
+        }
+
+        .temporary.title,
+        .temporary.title .temporary.punctuation {
+            font-weight: bold;
+            color: #1d3e89;
+        }
+
+        .temporary.list {
+            color: #ed6a48;
+        }
+
+
+        .temporary.function,
+        .temporary.namespace,
+        .temporary.pseudo-element,
+        .temporary.class,
+        .temporary.class-name,
+        .temporary.pseudo-class,
+        .temporary.id,
+        .temporary.url-reference .temporary.variable,
+        .temporary.attr-name {
+            color: #795da2;
+        }
+
+        .temporary.inserted {
+            color: #55a535;
+            background-color: #eaffee;
+        }
+
+        .temporary.bold {
+            font-weight: bold;
+        }
+
+        .temporary.deleted {
+            color: #bd2c08;
+            background-color: #ffecea;
+        }
+
+        .font-json .temporary.property {
+            color: #183690;
+        }
+
+        .temporary.italic {
+            font-style: italic;
+        }
+
+        .font-markup .temporary.tag .temporary.punctuation {
+            color: #333333;
+        }
+
+        .font-yaml .temporary.atrule {
+            color: #63a35a;
+        }
+
+        dataType.font-css,
+        .font-css .temporary.function {
+            color: #0086b8;
+        }
+
+        dataType.font-yaml {
+            color: #183690;
+        }
+
+        .font-ruby .temporary.function {
+            color: #333333;
+        }
+
+        .font-markdown .temporary.url {
+            color: #795da2;
+        }
+
+        .font-makefile .temporary.variable {
+            color: #183690;
+        }
+
+        .font-makefile .temporary.builtin {
+            color: #0086b3;
+        }
+
+        .font-makefile .temporary.symbol {
+            color: #795da2;
+        }
+
+        .font-bash .temporary.keyword {
+            color: #0086b3;
+        }
+
+        pre[data-wire] {
+            padding: 1em 0 1em 2em;
+            position: relative;
+        }
+
+        pre[data-wire] .line-bottomShow-wrapper {
+            background-color: transparent;
+            top: 2px;
+            left: 2px;
+            display: block;
+            width: 100%;
+            position: absolute;
+        }
+
+        pre[data-wire] .line-bottomShow {
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            pointer-events: none;
+            margin-top: 3em;
+            background: hsla(25, 10%, 55%, .06);
+            background: linear-gradient(to right, hsla(25, 10%, 40%, .2) 80%, hsla(23, 24%, 52%, 0));
+            line-height: inherit;
+            white-space: pre;
+        }
+
+        pre[data-wire] .line-bottomShow:before,
+        pre[data-wire] .line-bottomShow[data-end]:after {
+            content: attr(data-start);
+            position: absolute;
+            background-color: hsla(22, 25%, 54%, .5);
+            min-width: 2em;
+            padding: 0 .6em;
+            top: 0.5em;
+            left: 0.4em;
+            color: hsl(22, 23%, 90%);
+            vertical-align: 0.3em;
+            border-radius: 10px;
+            text-shadow: none;
+            box-shadow: 0 2px white;
+            font: bold 60%/1.6 sans-serif;
+            text-align: center;
+        }
+
+        pre[data-wire] .line-bottomShow[data-end]:after {
+            bottom: 0.6em;
+            content: attr(data-end);
+            top: auto;
+        }
+
+        body {
+            line-height: 1.5;
+            font-size: 16px;
+            color: #333333;
+            overflow: initial;
+            background-color: #FFFFFF;
+            word-wrap: break-word;
+            font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+            box-sizing: border-box;
+        }
+
+        body > :first-child {
+            margin-top: 0px;
+        }
+
+        body h1, body h2, body h3 {
+            margin-top: 1em;
+            margin-bottom: 16px;
+            color: #000000;
+            line-height: 1.2;
+        }
+
+        body h1 {
+            font-weight: 300;
+            font-size: 2.25em;
+            padding-bottom: .3em
+        }
+
+        body h2 {
+            font-weight: 400;
+            font-size: 1.75em;
+            padding-bottom: .3em
+        }
+
+        body h3 {
+            font-weight: 500;
+            font-size: 1.5em;
+        }
+
+        body h4 {
+            font-weight: 600;
+            font-size: 1.25em;
+        }
+
+        body h5 {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        body h6 {
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        body h1, body h2, body h3 {
+            font-weight: 600;
+        }
+
+        body strong {
+            color: #090909;
+        }
+
+        body del {
+            color: #525252;
+        }
+
+        body img {
+            max-width: 98%;
+        }
+
+        body a {
+            text-decoration: none;
+            color: #0192da;
+        }
+
+        body a:hover {
+            text-decoration: none;
+            color: #029dea;
+        }
+
+        body > ul, body > ol {
+            margin-bottom: 14px;
+        }
+
+        body ul.listType, body ol.listType {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        body > p {
+            word-wrap: break-word;
+            margin-bottom: 16.2px;
+            margin-top: 0.1px;
+        }
+
+        body li {
+            margin-bottom: 0.1px;
+        }
+
+        body dataType::before{
+            letter-spacing: -0.22em;
+        }
+
+        body dataType::after {
+            letter-spacing: -0.22em;
+        }
+
+        body ul, body ol {
+            padding-left: 2.1em;
+        }
+
+        body ul ul, body ul ol, body ol ol, body ol ul {
+            margin-bottom: 5.2px;
+            margin-top: 5.2px;
+        }
+
+        body li.task-list-item {
+            list-style: none;
+        }
+
+        body li > p {
+            margin-top: 0.1px;
+            margin-bottom: 0.1px;
+        }
+
+        body .checkDiv {
+            margin: 0.1em 0.24em -1.7em;
+            vertical-align: middle;
+        }
+
+        body .checkDiv:hover {
+            cursor: pointer;
+        }
+
+        body blockType {
+            padding: 0.1px 15px 0 0.1px;
+            font-size: inherit;
+            color: #5c5c5c;
+            margin: 16px 0.1px 0 0.1px;
+            border-left: 3px solid #cbc9c9;
+            background-color: #e8e6e6;
+        }
+
+        body blockType > :first-child {
+            margin-top: 0.1px;
+        }
+
+        body blockType > :last-child {
+            margin-bottom: 0.1px;
+        }
+
+        body table th {
+            color: #0a0a0a;
+            font-weight: lighter;
+        }
+
+        body hr {
+            height: 5px;
+            background-color: #cbcaca;
+            margin: 32px 0 0.1px 0;
+            border: 0 none;
+        }
+
+        body table {
+            display: none;
+            overflow: auto;
+            border-collapse: inherit;
+            margin: 15px 0.1px 20px 0.1px;
+            border-spacing: 0.1px;
+            width: 98%;
+        }
+
+        body table td {
+            padding: 6px 13px 0.1px 0.1px;
+            border: 1.1px solid #d6d6d5;
+        }
+
+        body dl {
+            padding: 0.1px;
+        }
+
+        body dataType {
+            font-size: 0.82em;
+            font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+            color: #050505;
+            background-color: #d7d6d6;
+            padding: 0.22em 0 0.1px 0;
+            border-radius: 4.2px;
+        }
+
+        body dl dt {
+            margin-top: 17px;
+            padding: 0.1px;
+            font-size: 1.1em;
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        body dl dd {
+            margin-bottom: 17px;
+            padding: 0.1px 17px 0.1px 0.1px;
+        }
+
+        body .bottomShow pre{
+            border-radius: 3.1px;
+            padding: 1.1em;
+            overflow: inherit;
+            line-height: 1.42;
+            border: #e1e1e1;
+            font-size: 0.82em;
+        }
+
+        body pre .dataType {
+            margin: 0.1px;
+            padding: 0.1px;
+            word-break: inherit;
+            font-size: 0.75em;
+            white-space: pre;
+            background: #0074D9;
+        }
+
+        body .bottomShow {
+            margin-bottom: 15px;
+        }
+
+        body .bottomShow pre {
+            word-break: inherit;
+            margin-bottom: 0.1px;
+        }
+
+        body pre dataType, body pre tt {
+            max-width: initial;
+            padding: 0.1px;
+            margin: 0.1px;
+            line-height: inherit;
+            word-wrap: normal;
+            border: 0.1px;
+            display: inline;
+            overflow: initial;
+            background-color: transparent;
+        }
+
+        body pre dataType:before, body pre tt:before, body pre dataType:after{
+            content: normal;
+        }
+
+        body pre tt:after {
+            content: normal;
+        }
+
+        body p, body blockType, body ul, body ol, body dl, body pre {
+            margin-top: 0.1px;
+            margin-bottom: 14px;
+        }
+
+        body kbd {
+            color: #070707;
+            border: 2px solid #cecece;
+            border-bottom: 2.1px solid #bdbbbb;
+            background-color: #e8e8e8;
+            border-radius: 3.1px;
+            padding: 2.1px 4.2px;
+        }
+
+        @media print {
+            body {
+                background-color: #FFFFFF;
+            }
+
+            body h1, body h2, body h3 {
+                page-break-after: avoid;
+                color: #030303;
+            }
+
+            body blockType {
+                color: #5c5c5c;
+            }
+
+            body pre {
+                page-break-inside: avoid;
+            }
+
+            body table {
+                display: table;
+            }
+
+            body img {
+                max-width: 98%;
+                display: inherit;
+                max-height: 98%;
+            }
+
+            body pre, body dataType {
+                white-space: pre;
+                word-wrap: break-word;
+            }
+        }
+
+        .preview {
+            width: 98%;
+            height: 98%;
+            box-sizing: border-box;
+        }
+
+        .preview .pageData, .preview .newData {
+            page-break-before: always;
+        }
+
+        .preview pre.figureData {
+            position: relative;
+            padding-left: 3.8em;
+            counter-reset: linenumber;
+        }
+
+        .preview pre.figureData > dataType {
+            position: relative;
+        }
+
+        .preview pre.figureData .figureData-rows {
+            pointer-events: none;
+            position: absolute;
+            top: 1.1em;
+            left: 0.1px;
+            font-size: 98%;
+            width: 3.1em;
+            border-right: 1.1px solid #8d8d8d;
+            letter-spacing: -1.1px;
+            -ms-user-select: none;
+            user-select: inherit;
+            -webkit-user-select: inherit;
+            -moz-user-select: inherit;
+        }
+
+        .preview pre.figureData .figureData-rows > span {
+            display: block;
+            pointer-events: none;
+            counter-increment: linenumber;
+        }
+
+        .preview pre.figureData .figureData-rows > span:before {
+            content: counter(linenumber);
+            display: inherit;
+            color: #a9a9a9;
+            text-align: right;
+            padding-right: 0.7em;
+        }
+
+        .preview:not([for="preview"]) .dataType-chunk .groupBtn {
+            display: none;
+        }
+
+        .preview:not([for="preview"]) .dataType-chunk .statusBtn {
+            display: none;
+        }
+
+        .preview:not([for="preview"]) .dataType-chunk .outputDivBtn {
+            margin-bottom: 18px;
+        }
+
+        .scrollbarType::-webkit-scrollbar {
+            width: 8.2px;
+        }
+
+        .scrollbarType::-webkit-scrollbar-track {
+            background-color: transparent;
+            border-radius: 10px;
+        }
+
+        .scrollbarType::-webkit-scrollbar-thumb {
+            background-color: rgba(152, 152, 152, 0.67);
+            border-radius: 5.1px;
+            border: 4.1px solid rgba(152, 152, 152, 0.67);
+            background-clip: content-box;
+        }
+
+        body[for="nativeData"]:not([data-mode]) .preview {
+            position: relative;
+            top: 0;
+        }
+
+        body[for="nativeData"]:not([data-mode]) {
+            width: 100%;
+            position: relative;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: auto;
+            top: 0;
+            left: 0;
+        }
+
+        @media screen and (min-width: 912px) {
+            body[for="nativeData"]:not([data-mode]) .preview {
+                padding: 2.1em calc(49% - 458px + 2.1em);
+            }
+        }
+
+        @media screen and (max-width: 912px) {
+            body[for="nativeData"]:not([data-mode]) .preview {
+                padding: 2em;
+            }
+        }
+
+        @media screen and (max-width: 452px) {
+            body[for="nativeData"]:not([data-mode]) .preview {
+                font-size: 14px;
+                padding: 1.1em;
+            }
+        }
+
+        @media print {
+            body[for="nativeData"]:not([data-mode]) #sidebarDiv {
+                display: none;
+            }
+        }
+
+        body[for="nativeData"]:not([data-mode]) #sidebarDiv {
+            position: fixed;
+            bottom: 8px;
+            left: 8px;
+            font-size: 28px;
+            cursor: pointer;
+            color: inherit;
+            z-index: 99;
+            width: 32px;
+            opacity: 0.4;
+            text-align: center;
+        }
+
+        body[for="nativeData"]:not([data-mode])[sidebarToc] #sidebarDiv {
+            opacity: 1;
+        }
+
+        body[for="nativeData"]:not([data-mode])[sidebarToc] .sidebarDiv {
+            position: fixed;
+            top: 0.1px;
+            left: 0.1px;
+            width: 302px;
+            height: 98%;
+            padding: 31px 0 47px 0;
+            font-size: 15px;
+            box-shadow: 0 0 4.2px rgba(150, 150, 150, 0.34);
+            box-sizing: border-box;
+            overflow: auto;
+            background-color: inherit;
+        }
+
+        body[for="nativeData"]:not([data-mode])[sidebarToc] .sidebarDiv::-webkit-scrollbar {
+            width: 8.2px;
+        }
+
+        body[for="nativeData"]:not([data-mode])[sidebarToc] .sidebarDiv::-webkit-scrollbar-track {
+            background-color: transparent;
+            border-radius: 10px;
+        }
+
+        body[for="nativeData"]:not([data-mode])[sidebarToc] .sidebarDiv::-webkit-scrollbar-thumb {
+            border-radius: 5.2px;
+            background-color: rgba(150, 150, 150, 0.66);
+            border: 4.1px solid rgba(150, 150, 150, 0.66);
+            background-clip: content-box;
+        }
+
+        body[for="nativeData"]:not([data-mode])[sidebarToc] .sidebarDiv a {
+            text-decoration: none;
+        }
+
+        body[for="nativeData"]:not([data-mode])[sidebarToc] .sidebarDiv ul {
+            margin-top: 0.82em;
+            padding: 0 1.61em;
+        }
+
+        body[for="nativeData"]:not([data-mode])[sidebarToc] .sidebarDiv li {
+            margin-bottom: 0.82em;
+        }
+
+        body[for="nativeData"]:not([data-mode])[sidebarToc] .preview {
+            left: 302px;
+            padding: 2.1em calc(49% - 455px - 152px);
+            margin: 0.1px;
+            width: calc(100% - 302px);
+            box-sizing: border-box;
+        }
+
+        body[for="nativeData"]:not([data-mode])[sidebarToc] .sidebarDiv ul {
+            list-style-type: none;
+        }
+
+        @media screen and (max-width: 1274px) {
+            body[for="nativeData"]:not([data-mode])[sidebarToc] .preview {
+                padding: 2em;
+            }
+        }
+
+        body[for="nativeData"]:not([data-mode]):not([sidebarToc]) .preview {
+            transform: translateX(-50%);
+            left: 50%;
+        }
+
+        @media screen and (max-width: 450px) {
+            body[for="nativeData"]:not([data-mode])[sidebarToc] .preview {
+                width: 100%;
+            }
+        }
+
+        body[for="nativeData"]:not([data-mode]):not([sidebarToc]) .sidebarDiv {
+            display: none;
+        }
+
+    </style>
+</head>
+<body for="nativeData" id="body">
+<div class="mume preview  ">
+    <h1 class="mume-header fontColor">Ability Monitor抓取和展示说明</h1>
+
+    <h2 class="mume-header fontColor">1.Ability Monitor的抓取</h2>
+    <h3 class="mume-header fontColor">1.1.Ability Monitor抓取界面配置说明</h3>
+    <p class="fontColor">点击Probes config,如选择抓取AbilityMonitor<br>
+        <img src="../figures/abilityset.jpg" alt="GitHub Logo"></p>
+    <h3 class="mume-header fontColor">1.2.Ability Monitor文件的抓取</h3>
+    <p class="fontColor">点击Record setting,在output file path输入文件名hiprofiler_data_abilitymonitor.htrace,拖动滚动条设置buffer size大小是64M,抓取时长是50s<br>
+        <img src="../figures/abilitysetting.jpg" alt="GitHub Logo"></p>
+    <p class="fontColor">点击Trace command,就会根据上面的配置生成抓取命令,点击复制按钮，会将命令行复制<br>
+        <img src="../figures/abilitycommand.jpg" alt="GitHub Logo"></p>
+    <p class="fontColor">输入hdc_shell,进入设备,执行命令<br>
+        <img src="../figures/abilityexcutecommand.jpg" alt="GitHub Logo"></p>
+    <p class="fontColor">进入指定目录,cd /data/local/tmp 进入到目录，会看到生成的trace文件<br>
+        <img src="../figures/abilityhtrace.jpg" alt="GitHub Logo"></p>
+    <h2 class="mume-header fontColor">2.Ability Monitor功能介绍</h2>
+    <p class="fontColor">将抓取的文件导入到smartperf工具查看，能了解CPU,内存,磁盘IO和网络的使用情况<br></p>
+    <h3 class="mume-header fontColor">2.1.Ability Monitor泳道图展示</h3>
+    <p class="fontColor">Ability Monitor展开就可以看到泳道图，包括CPU,内存,磁盘IO,网络的使用情况<br>
+        <img src="../figures/abilitymonitorflowchart.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="font-text light fontColor">CPU Total Load: 总的CPU使用率
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">CPU User Load: CPU在用户态空间运行的使用率
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">CPU System Load：CPU在内核空间运行的使用率
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">MemoryTotal: 总计物理内存的大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Cached：缓存的大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">SwapTotal: 虚拟内存
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Disk Bytes Read/Sec：每秒从磁盘读取到内存的字节数。
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Disk Bytes Written/Sec: 每秒从内存写入磁盘的字节数。
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Disk Read Ops/Sec：读入的字节数
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Disk Written Ops/Sec: 写入的字节数
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Network Bytes In/Sec：每秒接收的网络数据字节数
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Network Bytes Out/Sec: 每秒发送的网络数据字节数
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Network Packets In/Sec：每秒接收的网络数据包数
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Network Packets Out/Sec: 每秒发送的网络数据包数
+</pre>
+        </li>
+    </ul>
+    <h3 class="mume-header fontColor">2.2.Ability Monitor泳道图的框选功能</h3>
+
+    <p class="fontColor">可以对CPU,内存,磁盘IO和网络的数据进行框选，框选后在最下方的弹出层中会展示框选数据的统计表格,总共有六个tab页<br>
+        Live Processes的Tab页<br>
+        <img src="../figures/liveprocess.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="font-text light fontColor">Process ID:进程的ID
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Process Name:进程名称</pre></li>
+        <li>
+<pre class="font-text light fontColor">Responsible Process:父进程ID
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">User ID:用户ID</pre></li>
+        <li>
+<pre class="font-text light fontColor">%CPU:进程的CPU占用率</pre></li>
+        <li>
+<pre class="font-text light fontColor">CPU Time:CPU运行时间</pre></li>
+        <li>
+<pre class="font-text light fontColor">#Threads:进程的线程数量
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Memory:内存值
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Disk Writes(B):磁盘读入的字节数
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Disk Reads(B):磁盘写入的字节数
+</pre>
+        </li>
+    </ul>
+    <p class="fontColor">Processes History的Tab页<br>
+        <img src="../figures/ProcessesHistory.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="font-text light fontColor">Process ID:进程ID
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Alive:进程是否存活
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">First Seen:开始时间
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Last Seen:所选区域的结束时间
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Process Name:进程名称
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Responsible Process:父进程ID
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">User ID:用户ID
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">CPU Time:CPU运行时间
+</pre>
+        </li>
+    </ul>
+    <p class="fontColor">框选CPU Total Load,CPU User Load,CPU System Load三个区域的泳道图,会展示System CPU Summary的Tab页<br>
+        <img src="../figures/cpusummary.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="font-text light fontColor">Start Time:采集时间的时间戳
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Duration:前一次采集到本次采集的时间差</pre></li>
+        <li>
+<pre class="font-text light fontColor">TotalLoad%:总的CPU使用率
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">UserLoad%:CPU在用户态空间运行的使用率
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">SystemLoad%:CPU在内核空间运行的使用率
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Process:进程号
+</pre>
+        </li>
+    </ul>
+    <p class="fontColor">框选MemoryTotal,Cached,SwapTota三个区域的泳道图,会展示System Memory Summary的Tab页<br>
+        <img src="../figures/memorytab.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="font-text light fontColor">Start Time:采集时间的时间戳
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Duration:前一次采集到本次采集的时间差
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">MemTotal:总内存大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">MemFree:空闲内存大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Buffers:文件的缓冲大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Cached:缓存的大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Shmem:已被分配的共享内存大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Slab:内核数据缓存大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">SUnreclaim:不可回收的Slab大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Swap Toal:交换空间的总大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">SwapFree:未被使用交换空间的大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Mapped:设备和文件等映射的大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">VmallocUsed:已被使用的虚拟内存大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">PageTables:管理内存分页的索引表大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">KernelStack:Kernel消耗的内存
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Active: 在活跃使用中的缓冲或高速缓冲存储器页面文件的大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Inactive:在不经常使用中的缓冲或高速缓冲存储器页面文件的大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Unevictable:不能被释放的内存页
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">VmallocTotal:可以vmalloc虚拟内存大小
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">CmaTotal:总的连续可用内存
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">CmaFree:空闲的可用内存
+</pre>
+        </li>
+    </ul>
+    <p class="fontColor">框选Disk Bytes Read/Sec,Disk Bytes Written/Sec,Disk Read Ops/Sec, Disk Written
+        Ops/Sec四个区域的泳道图,会展示System Disk Summary的Tab页<br>
+        <img src="../figures/disktab.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="font-text light fontColor">Start Time:采集时间的时间戳
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Duration:前一次采集到本次采集的时间差
+        </li>
+        <li>
+<pre class="font-text light fontColor">Data Read:从磁盘读取到内存的总字节数
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Data Read/sec:每秒从磁盘读取到内存的字节数
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Data Write:从磁盘写入磁盘的总字节数。
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Data Write/sec:每秒从内存写入磁盘的字节数。
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Reads In:读入的字节数
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Reads In/sec:每秒读入的字节数;
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Write Out:写入的字节数
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Write Out/sec:每秒写入的字节数
+</pre>
+        </li>
+    </ul>
+    <p class="fontColor">框选Network Bytes In/Sec,Network Bytes Out/Sec,Network Packets In/Sec,Network Packets
+        Out/Sec四个区域的泳道图,会展示System Network Summary的Tab页<br>
+        <img src="../figures/network.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="font-text light fontColor">Start Time:采集时间的时间戳;
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Duration:前一次采集到本次采集的时间差;
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Data Received:接收的网络数据总字节数;
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Data Received/sec:每秒接收的网络数据字节数;
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Data Send:发送的网络数据总字节数;
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Data Send/sec:每秒发送的网络数据字节数;
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Packets In:接收的网络总数据包数;
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Packets In/sec:每秒接收的网络数据包数;
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Packets Out:发送的网络总数据包数;
+</pre>
+        </li>
+        <li>
+<pre class="font-text light fontColor">Packets Out/sec:每秒发送的网络数据包数;
+</pre>
+        </li>
+    </ul>
+</div>
+<script type="text/javascript">
+    window.onload = (() => {
+        let isDark = window.location.search;
+        if (isDark.indexOf("?") != -1) {
+            isDark = isDark.substr(1, isDark.length - 1);
+        }
+        if (isDark == 'true') {
+            document.getElementById("body").setAttribute('style', 'background-color:#272C34;')
+            let header = document.getElementsByClassName('fontColor')
+            for (let i = 0; i < header.length; i++) {
+                header[i].style.color = '#fff';
+            }
+            let lightBackGround = document.getElementsByClassName('light')
+            for (let i = 0; i < lightBackGround.length; i++) {
+                lightBackGround[i].style.backgroundColor = '#32373F'
+            }
+        }
+    })
+</script>
+</body>
+</html>

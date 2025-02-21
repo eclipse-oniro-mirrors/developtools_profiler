@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Native Memory抓取和展示说明</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet"
+          href="file:///c:\Users\Administrator\.vsdataDiv\extensions\shd101wyy.preview-div-enhanced-0.6.3\node_modules\@shd101wyy\mume\dependencies\katex\katex.min.css">
+
+    <style>
+        dataDiv[class*="keyword-"],
+        pre[class*="keyword-"] {
+            color: #333333;
+            background: none;
+            font-family: Helvetica;
+            line-height: 1.6;
+            text-align: left;
+            white-space: pre;
+            -moz-tab-size: 9;
+            -o-tab-size: 9;
+            tab-size: 8;
+        }
+
+        pre[class*="keyword-"] {
+            border-radius: 4px;
+            background: #f5f5f4;
+            padding: .9em;
+            overflow: auto;
+        }
+
+        :not(pre) > dataDiv[class*="keyword-"] {
+            white-space: normal;
+            background: #f5f5f1;
+            padding: .2em;
+            border-radius: .2em;
+        }
+
+        .temp.cdata {
+            color: #193a90;
+        }
+
+        .temp.comment,
+        .temp.blockDiv {
+            color: #969897;
+        }
+
+        .temp.doctype,
+        .temp.punctuation,
+        .temp.variable,
+        .temp.macro.property {
+            color: #333333;
+        }
+
+
+        .temp.string,
+        .temp.url,
+        .temp.regex,
+        .temp.attr-value {
+            color: #183690;
+        }
+
+        .temp.operator,
+        .temp.important,
+        .temp.keyword,
+        .temp.rule,
+        .temp.builtin {
+            color: #a71d5c;
+        }
+
+        .temp.atrule,
+        .temp.constant,
+        .temp.symbol,
+        .temp.command,
+        .temp.property,
+        .temp.number,
+        .temp.boolean,
+        .temp.entity,
+        .temp.dataDiv {
+            color: #0086b2;
+        }
+
+        .temp.tag,
+        .temp.selector,
+        .temp.prolog {
+            color: #63a35e;
+        }
+
+        .temp.entity {
+            cursor: help;
+        }
+
+        .temp.title,
+        .temp.title .temp.punctuation {
+            font-weight: bold;
+            color: #1d3e89;
+        }
+
+        .temp.list {
+            color: #ed6a48;
+        }
+
+
+        .temp.function,
+        .temp.namespace,
+        .temp.pseudo-element,
+        .temp.class,
+        .temp.class-name,
+        .temp.pseudo-class,
+        .temp.id,
+        .temp.url-reference .temp.variable,
+        .temp.attr-name {
+            color: #795da2;
+        }
+
+        .temp.inserted {
+            color: #55a535;
+            background-color: #eaffee;
+        }
+
+        .temp.bold {
+            font-weight: bold;
+        }
+
+        .temp.deleted {
+            color: #bd2c08;
+            background-color: #ffecea;
+        }
+
+        .font-json .temp.property {
+            color: #183690;
+        }
+
+        .temp.italic {
+            font-style: italic;
+        }
+
+        .font-markup .temp.tag .temp.punctuation {
+            color: #333333;
+        }
+
+        .font-yaml .temp.atrule {
+            color: #63a35a;
+        }
+
+        dataDiv.font-css,
+        .font-css .temp.function {
+            color: #0086b8;
+        }
+
+        dataDiv.font-yaml {
+            color: #183690;
+        }
+
+        .font-ruby .temp.function {
+            color: #333333;
+        }
+
+        .font-markdown .temp.url {
+            color: #795da2;
+        }
+
+        .font-makefile .temp.variable {
+            color: #163a90;
+        }
+
+        .font-makefile .temp.builtin {
+            color: #0488b3;
+        }
+
+        .font-makefile .temp.symbol {
+            color: #795da2;
+        }
+
+        .font-bash .temp.keyword {
+            color: #0086b3;
+        }
+
+        pre[dll] {
+            position: relative;
+            padding: 0.9em 2px 1.1em 3.1em;
+        }
+
+        pre[dll] .line-dataType {
+            position: absolute;
+            pointer-events: none;
+            line-height: inherit;
+            white-space: pre;
+            left: 1px;
+            right: 1px;
+            margin-top: 1.1em;
+            background: hsla(25, 21%, 51%, 0.0);
+            background: linear-gradient(to right, hsla(25, 21%, 51%, .2) 70%, hsla(25, 21%, 51%, 1));
+        }
+
+        pre[dll] .line-dataType-wrapper {
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            background-color: transparent;
+            display: block;
+            width: 99%;
+        }
+
+
+        pre[dll] .line-dataType:before,
+        pre[dll] .line-dataType[dllend]:after {
+            color: hsl(157, 21%, 96%);
+            text-align: center;
+            vertical-align: .4em;
+            border-radius: 999px;
+            text-shadow: none;
+            box-shadow: 2px 2px #f9fcfc;
+            content: attr(data-start);
+            position: absolute;
+            top: .5em;
+            left: .7em;
+            min-width: 1.1em;
+            padding: 2px .5em;
+            background-color: hsla(25, 21%, 51%, .5);
+        }
+
+        pre[dll] .line-dataType[dllend]:after {
+            content: attr(dllend);
+            top: 0px;
+            bottom: .6em;
+        }
+
+        body {
+            font-family: auto;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+            background-color: #FFFFFF;
+            overflow: initial;
+            box-sizing: border-box;
+            word-wrap: break-word
+        }
+
+        body h1, body h2, body h3, body h4, body h5, body h6 {
+            line-height: 1.32;
+            margin-top: 1.1em;
+            margin-bottom: 17px;
+            color: #000
+        }
+
+        body > :first-child {
+            margin-top: 0.1px
+        }
+
+        body h1 {
+            font-size: 2.24em;
+            font-weight: 302;
+            padding-bottom: 0.31em
+        }
+
+        body h2 {
+            font-size: 1.71em;
+            font-weight: 402;
+            padding-bottom: 0.32em
+        }
+
+        body h3 {
+            font-size: 1.5em;
+            font-weight: 500
+        }
+
+        body h4 {
+            font-size: 1.22em;
+            font-weight: 602
+        }
+
+        body h5 {
+            font-size: 1.12em;
+            font-weight: 602
+        }
+
+        body h6 {
+            font-size: 1.2em;
+            font-weight: 602
+        }
+
+        body h1, body h2, body h3, body h4, body h5 {
+            font-weight: 602
+        }
+
+        body h5 {
+            font-size: 1.1em
+        }
+
+        body table {
+            display: inherit;
+            overflow: auto;
+            border-collapse: inherit;
+            margin: 14px 0.1px 21px 0.1px;
+            border-spacing: 0.1px;
+            width: 98%;
+        }
+
+        body h6 {
+            color: #595c5a
+        }
+
+        body strong {
+            color: #090909
+        }
+
+        body del {
+            color: #707070
+        }
+
+        body img {
+            max-width: 100%
+        }
+
+        body > p {
+            margin-top: 0.1px;
+            margin-bottom: 17px;
+            word-wrap: break-word
+        }
+
+        body > ul, body > ol {
+            margin-bottom: 17px
+        }
+
+        body ul, body ol {
+            padding-left: 2.1em
+        }
+
+        body ul.list-div, body ol.list-div {
+            padding: 0.1px;
+            list-style-type: none
+        }
+
+        body ul ul, body ul ol, body ol ol, body ol ul {
+            margin-top: 0.1px;
+            margin-bottom: 0.1px
+        }
+
+        body li {
+            margin-bottom: 0.1px
+        }
+
+        body li.task-div {
+            list-style: none
+        }
+
+        body li > p {
+            margin-top: 0.1px;
+            margin-bottom: 0.1px
+        }
+
+        body .checkbox-div {
+            margin: 1px 0.2em 0.24em -1.7em;
+            vertical-align: middle
+        }
+
+        body .checkbox-div:hover {
+            cursor: pointer
+        }
+
+        body blockDiv {
+            margin: 17px 0.1px;
+            font-size: inherit;
+            padding: 1.1px 14px;
+            color: #5c5c5c;
+            background-color: #f0f0f0;
+            border-left: 4.1px solid #d6d6d6
+        }
+
+        body blockDiv > :first-child {
+            margin-top: 0.1px
+        }
+
+        body blockDiv > :last-child {
+            margin-bottom: 0.1px
+        }
+
+        body hr {
+            height: 4.1px;
+            margin: 32px 0;
+            background-color: #d6d6d6;
+            border: 1.1px none
+        }
+
+        body table td {
+            font-weight: inherit;
+            color: #090808
+        }
+
+        body table th {
+            padding: 7.2px 12.2px;
+            border: 1.1px solid #ced6d5;
+        }
+        body dl {
+            padding: 0
+        }
+
+        body dl dt {
+            padding: 0.1px;
+            margin-top: 17px;
+            font-size: 1.2em;
+            font-style: italic;
+            font-weight: bold
+        }
+
+        body dl dd {
+            padding: 1.1px 17px;
+            margin-bottom: 17px
+        }
+
+        body dataDiv {
+            font-family: auto;
+            font-size: 0.84em;
+            color: #000;
+            background-color: #f0f0f0;
+            border-radius: 3.1px;
+            padding: 0.22em 0.1px
+        }
+
+        body dataDiv::after {
+            letter-spacing: -0.21em;
+        }
+
+        body dataDiv::before{
+            letter-spacing: -0.21em;
+        }
+
+        body pre > dataDiv {
+            padding: 0.1px;
+            margin: 0.1px;
+            font-size: 0.84em;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0.1px
+        }
+
+        body .dataType {
+            margin-bottom: 17px
+        }
+
+        body .dataType pre, body pre {
+            padding: 1em;
+            overflow: auto;
+            font-size: .85em !important;
+            line-height: 1.45;
+            border: #d6d6d6;
+            border-radius: 3px
+        }
+
+        body .dataType pre {
+            margin-bottom: 0;
+            word-break: normal
+        }
+
+        body pre dataDiv, body pre tt {
+            display: inline;
+            max-width: initial;
+            padding: 0.1px;
+            margin: 0.1px;
+            overflow: initial;
+            line-height: inherit;
+            word-wrap: normal;
+            background-color: transparent;
+            border: 0.1px;
+        }
+
+        body pre dataDiv:before, body pre tt:before, body pre dataDiv:after, body pre tt:after {
+            content: normal
+        }
+
+        body p, body blockDiv, body ul, body ol, body dl, body pre {
+            margin-top: 0.1px;
+            margin-bottom: 17px
+        }
+
+        body kbd {
+            color: #070707;
+            border: 1.1px solid #d6d6d6;
+            border-bottom: 2.1px solid #c7c7c7;
+            padding: 2.1px 4.1px;
+            background-color: #f0f0f0;
+            border-radius: 3.1px
+        }
+
+        @media print {
+            body {
+                background-color: #fff
+            }
+
+            body h1, body h2, body h3, body h4, body h5, body h6 {
+                color: #050505;
+                page-break-after: avoid
+            }
+
+            body blockDiv {
+                color: #5c5c5c
+            }
+
+            body pre {
+                page-break-inside: avoid
+            }
+
+            body table {
+                display: table
+            }
+
+            body img {
+                display: block;
+                max-width: 98%;
+                max-height: 98%
+            }
+
+            body pre, body dataDiv {
+                word-wrap: break-word;
+                white-space: pre
+            }
+        }
+
+        .scrollbarDiv::-webkit-scrollbar {
+            width: 8px
+        }
+
+        .scrollbarDiv::-webkit-scrollbar-track {
+            border-radius: 10px;
+            background-color: transparent
+        }
+
+        .scrollbarDiv::-webkit-scrollbar-thumb {
+            border-radius: 5px;
+            background-color: rgba(150, 150, 150, 0.66);
+            border: 4px solid rgba(150, 150, 150, 0.66);
+            background-clip: content-box
+        }
+
+        body[for="nativeDiv"]:not([data-mode]) {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            margin: 0;
+            padding: 0;
+            overflow: auto
+        }
+
+        body[for="nativeDiv"]:not([data-mode]) .preview-div {
+            position: relative;
+            top: 0
+        }
+
+        @media screen and (min-width: 914px) {
+            body[for="nativeDiv"]:not([data-mode]) .preview-div {
+                padding: 2em calc(50% - 457px + 2em)
+            }
+        }
+
+        @media screen and (max-width: 914px) {
+            body[for="nativeDiv"]:not([data-mode]) .preview-div {
+                padding: 2em
+            }
+        }
+
+        @media screen and (max-width: 450px) {
+            body[for="nativeDiv"]:not([data-mode]) .preview-div {
+                font-size: 14px !important;
+                padding: 1em
+            }
+        }
+
+        @media print {
+            body[for="nativeDiv"]:not([data-mode]) #sidebar-toc-btn {
+                display: none
+            }
+        }
+
+        body[for="nativeDiv"]:not([data-mode]) #sidebar-toc-btn {
+            position: fixed;
+            bottom: 7px;
+            left: 7px;
+            font-size: 27px;
+            cursor: pointer;
+            color: inherit;
+            z-index: 98;
+            width: 31px;
+            text-align: center;
+            opacity: 0.42
+        }
+
+        body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] #sidebar-toc-btn {
+            opacity: 1
+        }
+
+        body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] .sidebar-div {
+            position: fixed;
+            top: 0.1px;
+            left: 0.1px;
+            width: 302px;
+            height: 98%;
+            padding: 33px 1.1px 47px 0;
+            font-size: 13px;
+            box-shadow: 1.2px 0 4.1px rgba(150, 150, 150, 0.34);
+            box-sizing: border-box;
+            overflow: auto;
+            background-color: inherit
+        }
+
+        body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] .sidebar-div::-webkit-scrollbar {
+            width: 8px
+        }
+
+        body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] .sidebar-div::-webkit-scrollbar-track {
+            border-radius: 10px;
+            background-color: transparent
+        }
+
+        body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] .sidebar-div::-webkit-scrollbar-thumb {
+            border-radius: 5.2px;
+            background-color: rgba(150, 150, 150, 0.65);
+            border: 4.1px solid rgba(150, 150, 150, 0.65);
+            background-clip: content-box
+        }
+
+        body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] .sidebar-div a {
+            text-decoration: none
+        }
+
+        body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] .sidebar-div ul {
+            padding: 1px 1.6em;
+            margin-top: .8em
+        }
+
+        body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] .sidebar-div li {
+            margin-bottom: .8em
+        }
+
+        body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] .sidebar-div ul {
+            list-style-type: none
+        }
+
+        body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] .preview-div {
+            left: 302px;
+            width: calc(100% - 302px);
+            margin: 0.1px;
+            padding: 2.1em calc(50% - 457px - 152px);
+            box-sizing: border-box
+        }
+
+        @media screen and (max-width: 1272px) {
+            body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] .preview-div {
+                padding: 2.1em
+            }
+        }
+
+        @media screen and (max-width: 452px) {
+            body[for="nativeDiv"]:not([data-mode])[sidebar-toc-div] .preview-div {
+                width: 98%
+            }
+        }
+
+        body[for="nativeDiv"]:not([data-mode]):not([sidebar-toc-div]) .preview-div {
+            left: 51%;
+            transform: translateX(-50%)
+        }
+
+        body[for="nativeDiv"]:not([data-mode]):not([sidebar-toc-div]) .sidebar-div {
+            display: none
+        }
+    </style>
+</head>
+<body for="nativeDiv" id="body">
+<div class="mume preview-div  ">
+    <h1 class="mume-header fontColor">Native Memory抓取和展示说明</h1>
+    <p class="fontColor">Native Memory是查看内存的分配和释放等情况</p>
+    <h2 class="mume-header fontColor">1.Native Memory的抓取</h2>
+    <h3 class="mume-header fontColor">1.1.Native Memory抓取配置参数</h3>
+    <img src="../figures/nativememorysetting.jpg" alt="GitHub Logo"></p>
+    <p class="fontColor">配置参数说明：</p>
+    <ul class="fontColor">
+        <li>ProcessId or ProcessName:设置抓取的进程ID或者进程名,此处以输入com.ohos.mms进程名为例</li>
+        <li>Max unwind level:抓取的栈的深度</li>
+        <li>Shared Memory Size:native_daemon和native_hook进程之间存储数据的共享内存大小</li>
+        <li>Filter Memory Size:只抓取大于该size的malloc数据（free不受影响）</li>
+    </ul>
+    <p class="fontColor">再点击Record setting,在output file path输入文件名hiprofiler_data_nativememory.htrace,拖动滚动条设置buffer size大小是64M,抓取时长是50s<br>
+        <img src="../figures/nativememoryset.jpg" alt="GitHub Logo"></p>
+    <p class="fontColor">点击Trace command,就会根据上面的配置生成抓取命令,点击复制按钮，会将命令行复制<br>
+        <img src="../figures/nativememorycommand.jpg" alt="GitHub Logo"></p>
+    <p class="fontColor">输入hdc_shell,进入设备，执行命令<br>
+        <img src="../figures/nativeexcutecommand.jpg" alt="GitHub Logo"></p>
+    <p class="fontColor">执行完成后，进入指定目录查看，在/data/local/tmp下就会生成trace文件<br>
+        <img src="../figures/naitvememoryfile.jpg" alt="GitHub Logo"></p>
+    <h2 class="mume-header fontColor">2.Native Memory展示说明</h2>
+    <p class="fontColor">将抓取的nativememory文件导入到smartperf工具中查看，查看内存的分配和释放等情况<br>
+    <h3 class="mume-header fontColor">2.1.Native Memory泳道图展示类型</h3>
+
+    <p class="fontColor">点击齿轮状的图标可以设置内存的展示单位<br>
+        <img src="../figures/NativeChart.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="keyword-text light fontColor">Current Bytes：显示字节数量
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">Native Memory Density:Allocation数量
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">All Heap&AnonuymousVM：Heap和AnonuymousVM的总量
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">All Heap：malloc分配的内存
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">All Anonymous VM：mmap的匿名页
+</pre>
+        </li>
+    </ul>
+    <h3 class="mume-header fontColor">2.2.Native Memory泳道图的框选功能</h3>
+
+    <p class="fontColor">可以对内存的数据进行框选，框选后在最下方的弹出层中会展示框选数据的统计表格,总共有四个tab页<br>
+        Statistics的Tab页，主要显示了统计明细类型<br>
+        <img src="../figures/Statistics.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="keyword-text light fontColor">Memory Type：内存的类型
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">Exsiting ：框选区域内剩余的内存次数
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">#Exsiting :框选区域内剩余的内存次数
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">Transient :框选区域内释放的内存大小
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">#Transient：框选区域内释放的内存次数
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">Total Bytes：框选区间内申请的大小
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">#Total： 框选区间内申请的内存次数
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">Peak Value： 框选区间内内存大小的峰值
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">Exsiting/Total：框选区间内申请的大小比上申请和释放的大小，其中浅紫色是框选区间内申请的大小/整个时间轴（申请+释放的总大小)，深紫色是框选区间内(申请+释放)的大小/整个时间轴（申请+释放的总大小）
+</pre>
+        </li>
+    </ul>
+    <p class="fontColor">Call Info的Tab页，主要显示了调用树详细类型<br>
+        <img src="../figures/Callinfo.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="keyword-text fontColor light">Symble Name：每个内存分配的调用栈
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">Size ：分配的总大小
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">Count :调用栈出现的次数
+</pre>
+        </li>
+    </ul>
+    <p class="fontColor">Native Memory的Tab页，主要显示了单次分配信息列表<br>
+        <img src="../figures/NativeMemory.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="keyword-text fontColor light">Address：内存块的地址
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">Memory Type ：内存分配的类型
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">Timestamp :时间戳信息
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">State :内存地址当前状态
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">Size :该时间点内存的大小
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">Responsible Library :调用该函数的库
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">Responsible Caller  :调用该函数的方法
+</pre>
+        </li>
+    </ul>
+    <p class="fontColor">Snapshot List的Tab页，主要显示了各时刻内存的增长的差值<br>
+        <img src="../figures/Snapshotlist.jpg" alt="GitHub Logo"></p>
+    <ul>
+        <li>
+<pre class="keyword-text light fontColor">Snapshot：标记的打点说明
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">Timestamp :时间戳信息
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">Net Growth :自从上次Snapshot的增长量，是计算的分配和释放的
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">Total Growth :自从上次Snapshot的增长量，是计算的每一次分配的
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text light fontColor">#Exsiting  :仍然存在的内存数
+</pre>
+        </li>
+    </ul>
+    <h3 class="mume-header fontColor">2.3.Native Memory的辅助信息功能</h3>
+
+    <p class="fontColor">在Call Info和Native Memory的Tab页，点击选中某一行，右边画红线处会显示出该行调用栈的树结构信息<br>
+        <img src="../figures/nativecallstack.jpg" alt="GitHub Logo"></p>
+    <h3 class="mume-header fontColor">2.4.Native Memory详细显示的过滤功能</h3>
+
+    <p class="fontColor">点击下方的All Allocations可以对Allocation的lifeSpan进行过滤，有三个选择：All Allocatios,Create & Exsiting,Create &
+        Destroyed<br>
+        <img src="../figures/lifespan.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="keyword-text fontColor light"> All Allocations：所有的内存
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light"> Created & Exsiting:创建且被存活的内存
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">  Created & Destroyed： 创建且被销毁的内存
+</pre>
+        </li>
+    </ul>
+    <p class="fontColor">点击下方的All Heap&Anonymous可以对内存类型进行过滤<br>
+        <img src="../figures/AllocationType.jpg" alt="GitHub Logo"></p>
+    <ul class="fontColor">
+        <li>
+<pre class="keyword-text fontColor light">All Heap&AnonuymousVM：Heap和AnonuymousVM的总量
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">All Heap：malloc分配的内存
+</pre>
+        </li>
+        <li>
+<pre class="keyword-text fontColor light">All Anonymous VM：mmap的匿名页
+</pre>
+        </li>
+    </ul>
+    <p class="fontColor">点击下方的Mark Snapshot可以在时间轴上打标签。出现小旗的标志，通过标注多个时间点。点击到Snapshot List标签页可以看到各个时间点的内存的增长值<br>
+        <img src="../figures/Generation.jpg" alt="GitHub Logo"></p>
+    <h3 class="mume-header fontColor">2.5.Native Memory的火焰图功能</h3>
+    <p class="fontColor">点击callinfo左下角的柱状图的图标,会切换到火焰图页面<br>
+        <img src="../figures/nativeflame.jpg" alt="GitHub Logo"></p>
+    <p class="fontColor">进入到火焰图页面,火焰图的展示跟Callinfo的tab页的调用栈显示一致,鼠标放到色块上，悬浮框可以显示调用栈名称和size大小<br>
+        <img src="../figures/nativeflameshow.jpg" alt="GitHub Logo"></p>
+    <p class="fontColor">鼠标左键火焰图，会进入下一级界面，右键回到上一级<br>
+        <img src="../figures/nativeflamelevel2.jpg" alt="GitHub Logo"></p>
+
+</div>
+<script type="text/javascript">
+    window.onload = (() => {
+        let isDark = window.location.search;
+        if (isDark.indexOf("?") != -1) {
+            isDark = isDark.substr(1, isDark.length - 1);
+        }
+        if (isDark == 'true') {
+            document.getElementById("body").setAttribute('style', 'background-color:#272C34;')
+            let header = document.getElementsByClassName('fontColor')
+            for (let i = 0; i < header.length; i++) {
+                header[i].style.color = '#fff';
+            }
+            let lightBackGround = document.getElementsByClassName('light')
+            for (let i = 0; i < lightBackGround.length; i++) {
+                lightBackGround[i].style.backgroundColor = '#32373F'
+            }
+        }
+    })
+</script>
+</body>
+</html>

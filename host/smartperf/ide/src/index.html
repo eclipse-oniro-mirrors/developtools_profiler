@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trace Example</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+    <script type="text/javascript">
+        // Light = 1,Dark = 2,HighContrast = 3
+        window.addEventListener('message', event => {
+            const message = event.data;
+            let spApplication = document.getElementsByTagName("sp-application")[0]
+            spApplication.vs = true
+            switch (message.colorThemeKind) {
+                case 1:
+                    spApplication.dark = false;
+                    break;
+                case 2:
+                    spApplication.dark = true;
+                    break;
+                default:
+                    spApplication.dark = true;
+                    break;
+            }
+        });
+    </script>
+</head>
+<body>
+<script type="text/javascript">
+    'use strict';
+    let req = new XMLHttpRequest();
+    req.open('GET', document.location, false);
+    req.send(null);
+    window.version = req.getResponseHeader('data-version') || ""
+</script>
+<script src="trace/SpApplication.js" type="module"></script>
+<sp-application wasm query-sql></sp-application>
+</body>
+</html>

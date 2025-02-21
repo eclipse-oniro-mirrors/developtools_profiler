@@ -1,0 +1,48 @@
+# Copyright (C) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+OHOS_PROTO_DIR = ""
+kernel_version = "."
+if (target_os == "linux" || target_os == "windows" || target_os == "macx") {
+  OHOS_FTRACE_PROTO_DIR = "//src/multi_platform"
+  OHOS_MEMORY_PROTO_DIR = "//src/multi_platform"
+  OHOS_SERVICE_PROTO_DIR = "//src/multi_platform"
+  OHOS_PROTO_GEN = "//third_party/protogen"
+  if (target == "test") {
+    OHOS_MEMORY_PROTO_DIR = "$OHOS_PROTO_GEN/types/plugins/memory_data"
+    OHOS_NETWORK_PROTO_DIR = "$OHOS_PROTO_GEN/types/plugins/network_data"
+    OHOS_DISKIO_PROTO_DIR = "$OHOS_PROTO_GEN/types/plugins/diskio_data"
+    OHOS_CPUDATA_PROTO_DIR = "$OHOS_PROTO_GEN/types/plugins/cpu_data"
+    OHOS_PROCESS_PROTO_DIR = "$OHOS_PROTO_GEN/types/plugins/process_data"
+    OHOS_HISYSEVENT_PROTO_DIR = "$OHOS_PROTO_GEN/types/plugins/hisysevent_data"
+    enable_ts_utest = true
+    OHOS_HILOG_PROTO_DIR = "//src/multi_platform"
+    OHOS_NATIVE_HOOK_PROTO_DIR = "//src/multi_platform"
+    OHOS_HIDUMP_PROTO_DIR = "//src/multi_platform"
+  }
+} else {
+  use_wasm = false
+  OHOS_FTRACE_PROTO_DIR =
+      "//developtools/profiler/protos/types/plugins/ftrace_data"
+  OHOS_MEMORY_PROTO_DIR =
+      "//developtools/profiler/protos/types/plugins/memory_data"
+  OHOS_HILOG_PROTO_DIR =
+      "//developtools/profiler/protos/types/plugins/hilog_data"
+  OHOS_NATIVE_HOOK_PROTO_DIR =
+      "//developtools/profiler/protos/types/plugins/native_hook"
+  OHOS_HIDUMP_PROTO_DIR =
+      "//developtools/profiler/protos/types/plugins/hidump_data"
+  OHOS_SERVICE_PROTO_DIR = "//developtools/profiler/protos/services"
+  OHOS_PROTO_GEN =
+      "//developtools/profiler/trace_analyzer/third_party/protogen/"
+  enable_ts_utest = true
+}

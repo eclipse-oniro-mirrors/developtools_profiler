@@ -1,0 +1,94 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("../../base/config.gni")
+
+config("hiprofiler_plugins_config") {
+  include_dirs = [
+    "./include",
+    "./src",
+    "../../base/include/",
+    "${OHOS_PROFILER_DIR}/device/services/ipc/include",
+    "${OHOS_PROFILER_DIR}/device/services/shared_memory/include",
+    "${OHOS_PROFILER_DIR}/interfaces/kits",
+  ]
+  cflags = [ "-pthread" ]
+  if (current_toolchain != host_toolchain) {
+    cflags += [ "-DHAVE_HILOG" ]
+  }
+}
+
+ohos_source_set("plugins_sources") {
+  part_name = "profiler"
+  include_dirs = [
+    "./include",
+    "../../base/include/",
+    "${OHOS_PROFILER_DIR}/interfaces/kits",
+    "//third_party/bounds_checking_function/include",
+    "//third_party/openssl/include",
+  ]
+  sources = [
+    "src/buffer_writer.cpp",
+    "src/command_poller.cpp",
+    "src/plugin_manager.cpp",
+    "src/plugin_module.cpp",
+    "src/plugin_watcher.cpp",
+    "src/writer_adapter.cpp",
+  ]
+  public_deps = [
+    "${OHOS_PROFILER_DIR}/device/services/shared_memory:shared_memory",
+    "${OHOS_PROFILER_DIR}/protos/services:plugin_service_proto",
+    "${OHOS_PROFILER_DIR}/protos/services:profiler_service_all_type_source",
+    "../../base:hiprofiler_base",
+    "//third_party/bounds_checking_function:libsec_static",
+    "//third_party/openssl:libcrypto_shared",
+  ]
+  public_configs = [
+    ":hiprofiler_plugins_config",
+    "${OHOS_PROFILER_DIR}/device/base:hiprofiler_test_config",
+  ]
+  if (current_toolchain != host_toolchain) {
+    if (build_l2) {
+      external_deps = [ "shared_library:libhilog" ]
+    } else {
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    }
+  }
+}
+
+ohos_prebuilt_etc("hiprofiler_plugins.cfg") {
+  source = "../../etc/hiprofiler_plugins.cfg"
+  relative_install_dir = "init"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+}
+
+ohos_executable("hiprofiler_plugins") {
+  deps = [
+    ":hiprofiler_plugins.cfg",
+    ":plugins_sources",
+  ]
+  sources = [ "src/main.cpp" ]
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    if (build_l2) {
+      external_deps = [ "shared_library:libhilog" ]
+    } else {
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    }
+  }
+  install_enable = true
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}

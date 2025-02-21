@@ -1,0 +1,57 @@
+# Copyright (C) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("../base/config.gni")
+import("../plugins/ftrace_plugin/ftrace.gni")
+
+ohos_source_set("command_line") {
+  part_name = "profiler"
+  sources = [
+    "src/command_line.cpp",
+    "src/command_param.cpp",
+    "src/command_param_switch.cpp",
+    "src/command_param_text.cpp",
+  ]
+  include_dirs = [ "include" ]
+}
+ohos_executable("hiprofiler_cmd") {
+  sources = [
+    "src/main.cpp",
+    "src/parse_plugin_config.cpp",
+  ]
+  include_dirs = [ "include" ]
+  deps = [
+    ":command_line",
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf",
+    "${OHOS_PROFILER_3RDPARTY_PROTOBUF_DIR}:protobuf_lite",
+    "${OHOS_PROFILER_DIR}/device/base:hiprofiler_base",
+    "${OHOS_PROFILER_DIR}/protos/services:profiler_service_proto",
+    "${OHOS_PROFILER_DIR}/protos/services:profiler_service_type_source",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/cpu_data:cpu_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/diskio_data:diskio_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/ftrace_data/${device_kernel_version}:ftrace_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/hidump_data:hidump_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/hilog_data:hilog_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/hiperf_data:hiperf_data_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/hisysevent_data:hisysevent_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/memory_data:memory_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/native_hook:native_hook_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/network_data:network_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/process_data:process_plugin_config_cpp_standard",
+  ]
+  external_deps = [ "init:libbegetutil" ]
+  install_enable = true
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}

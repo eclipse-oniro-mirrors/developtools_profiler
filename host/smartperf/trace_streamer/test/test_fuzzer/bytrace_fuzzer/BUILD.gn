@@ -1,0 +1,79 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#####################hydra-fuzz###################
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../test_ts.gni")
+
+##############################fuzztest##########################################
+ohos_fuzztest("ts_bytrace_fuzz_test") {
+  include_dirs = [
+    "../../../src",
+    "../../../src/base",
+    "../../../src/table",
+    "../../../src/filter",
+    "../../../src/trace_data",
+    "../../../src/parser",
+    "../../../src/trace_streamer",
+    "../../../src/include",
+    "../../../src/parser/bytrace_parser",
+    "../../../src/cfg",
+    "../../../src/parser/htrace_parser",
+    "../../../src/parser/htrace_parser/htrace_event_parser",
+    "../../../src/parser/htrace_parser/htrace_cpu_parser",
+    "//third_party/sqlite/include",
+    "${OHOS_PROTO_GEN}/types/plugins/memory_data",
+    "${OHOS_PROTO_GEN}/types/plugins/ftrace_data/${kernel_version}",
+    "${OHOS_PROTO_GEN}/types/plugins/hilog_data",
+    "${OHOS_PROTO_GEN}/types/plugins/native_hook",
+    "${OHOS_PROTO_GEN}/types/plugins/hidump_data",
+    "${OHOS_PROTO_GEN}/types/plugins/network_data",
+    "${OHOS_PROTO_GEN}/types/plugins/cpu_data",
+    "${OHOS_PROTO_GEN}/types/plugins/diskio_data",
+    "${OHOS_PROTO_GEN}/types/plugins/process_data",
+    "${OHOS_PROTO_GEN}/types/plugins/hisysevent_data",
+    "${OHOS_PROTO_GEN}",
+    "//third_party/protobuf/src",
+  ]
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "bytrace_fuzzer.cpp" ]
+  ldflags = [
+    "-fprofile-arcs",
+    "-ftest-coverage",
+    "--coverage",
+  ]
+  deps = [
+    "../../../src:trace_streamer_source",
+    "//prebuilts/protos:ts_proto_data_cpp",
+    "//third_party/protobuf:protobuf",
+    "//third_party/protobuf:protobuf_lite",
+    "//third_party/sqlite:sqlite",
+  ]
+}
+
+###############################################################################
+group("fuzztest") {
+  testonly = true
+  deps = []
+  deps += [
+    # deps file
+    ":ts_bytrace_fuzz_test",
+  ]
+}
+###############################################################################

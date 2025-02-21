@@ -1,0 +1,120 @@
+# Copyright (C) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/ohos.gni")
+import("../../ts.gni")
+ohos_source_set("htrace_parser_src") {
+  sources = [
+    "../parser_base.cpp",
+    "htrace_clock_detail_parser.cpp",
+    "htrace_clock_detail_parser.h",
+    "htrace_cpu_data_parser.cpp",
+    "htrace_cpu_data_parser.h",
+    "htrace_cpu_parser/htrace_cpu_detail_parser.cpp",
+    "htrace_cpu_parser/htrace_cpu_detail_parser.h",
+    "htrace_disk_io_parser.cpp",
+    "htrace_disk_io_parser.h",
+    "htrace_event_parser/htrace_event_parser.cpp",
+    "htrace_event_parser/htrace_event_parser.h",
+    "htrace_file_header.h",
+    "htrace_hidump_parser.cpp",
+    "htrace_hidump_parser.h",
+    "htrace_hilog_parser.cpp",
+    "htrace_hilog_parser.h",
+    "htrace_hisysevent_parser.cpp",
+    "htrace_hisysevent_parser.h",
+    "htrace_mem_parser.cpp",
+    "htrace_mem_parser.h",
+    "htrace_native_hook_parser.cpp",
+    "htrace_native_hook_parser.h",
+    "htrace_network_parser.cpp",
+    "htrace_network_parser.h",
+    "htrace_parser.cpp",
+    "htrace_plugin_time_parser.cpp",
+    "htrace_plugin_time_parser.h",
+    "htrace_process_parser.cpp",
+    "htrace_process_parser.h",
+    "htrace_symbols_detail_parser.cpp",
+    "htrace_symbols_detail_parser.h",
+  ]
+  include_dirs = [
+    ".",
+    "htrace_event_parser",
+    "htrace_cpu_parser",
+    "${OHOS_PROTO_GEN}",
+    "${OHOS_PROTO_GEN}/types/plugins/memory_data",
+    "${OHOS_PROTO_GEN}/types/plugins/ftrace_data/${kernel_version}",
+    "${OHOS_PROTO_GEN}/types/plugins/hilog_data",
+    "${OHOS_PROTO_GEN}/types/plugins/native_hook",
+    "${OHOS_PROTO_GEN}/types/plugins/hidump_data",
+    "${OHOS_PROTO_GEN}/types/plugins/network_data",
+    "${OHOS_PROTO_GEN}/types/plugins/cpu_data",
+    "${OHOS_PROTO_GEN}/types/plugins/diskio_data",
+    "${OHOS_PROTO_GEN}/types/plugins/process_data",
+    "${OHOS_PROTO_GEN}/types/plugins/hisysevent_data",
+    "../../include",
+    "../../",
+    "../",
+    "../../trace_data",
+    "../../cfg",
+    "../../trace_streamer",
+    "//third_party/protobuf/src",
+    "//third_party/sqlite/include",
+    "//third_party/json-master/include",
+    "//third_party/json-master/include/nlohmann",
+    "../../filter",
+    "../../base",
+    "../ebpf_parser",
+  ]
+  include_dirs += [
+    "//third_party/libunwind/include",
+    "//third_party/libunwind/src",
+  ]
+  if (with_perf) {
+    include_dirs += [
+      "../hiperf_parser/hiperf/linux",
+      "../hiperf_parser/hiperf/include",
+      "../hiperf_parser/hiperf/kernel",
+      "//third_party/perf_include/include",
+      "//third_party/perf_include",
+      "//third_party/perf_include/linux",
+      "../hiperf_parser",
+      "../hiperf_parser/include",
+    ]
+  }
+  if (enable_ts_utest && !use_wasm) {
+    cflags = [
+      "-fprofile-arcs",
+      "-ftest-coverage",
+    ]
+    ldflags = [
+      "-fprofile-arcs",
+      "-ftest-coverage",
+      "--coverage",
+    ]
+  }
+  public_deps = []
+  deps = []
+}
+group("htrace_parser") {
+  deps = [
+    ":htrace_parser_src",
+    "//third_party/protobuf:protobuf",
+    "//third_party/protobuf:protobuf_lite",
+  ]
+  if (!use_wasm && !is_win && !is_macx && !is_test) {
+    deps += [ "//third_party/libunwind:libunwind" ]
+  }
+  if (target != "test" && !is_openharmony) {
+    deps += [ "//prebuilts/protos:ts_proto_data_cpp" ]
+  }
+}

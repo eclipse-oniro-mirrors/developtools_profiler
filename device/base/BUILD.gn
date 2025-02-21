@@ -1,0 +1,92 @@
+# Copyright (C) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("config.gni")
+
+# compile options for gcov
+config("hiprofiler_test_config") {
+  cflags = [
+    "-std=c++17",
+    "-fvisibility=hidden",
+  ]
+
+  cflags_cc = [ "-fvisibility-inlines-hidden" ]
+
+  ldflags = []
+
+  if (enable_coverage) {
+    # clang coverage options:
+    if (is_ohos) {
+      cflags += [
+        "-fprofile-arcs",
+        "-ftest-coverage",
+      ]
+      ldflags += [ "--coverage" ]
+    }
+    cflags += [
+      "-mllvm",
+      "-limited-coverage-experimental=true",
+      "-fno-use-cxa-atexit",
+    ]
+  }
+}
+
+config("hiprofiler_base_config") {
+  defines = []
+  if (use_musl && !is_asan) {
+    defines += [ "HOOK_ENABLE" ]
+  }
+  include_dirs = [
+    "include",
+    "//third_party/bounds_checking_function/include",
+    "//commonlibrary/c_utils/base/include",
+  ]
+}
+
+ohos_source_set("hiprofiler_base") {
+  part_name = "profiler"
+  sources = [
+    "src/common.cpp",
+    "src/epoll_event_poller.cpp",
+    "src/event_notifier.cpp",
+    "src/i_semaphore.cpp",
+    "src/posix_semaphore.cpp",
+    "src/pthread_semaphore.cpp",
+    "src/schedule_task_manager.cpp",
+    "src/std_semaphore.cpp",
+  ]
+
+  public_configs = [
+    ":hiprofiler_test_config",
+    ":hiprofiler_base_config",
+  ]
+
+  external_deps = [
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "ipc:ipc_core",
+    "samgr:samgr_proxy",
+  ]
+
+  public_deps = [ "//third_party/bounds_checking_function:libsec_static" ]
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+    if (build_l2) {
+      external_deps += [ "shared_library:libhilog" ]
+    } else {
+      external_deps += [ "hiviewdfx_hilog_native:libhilog" ]
+    }
+  }
+}

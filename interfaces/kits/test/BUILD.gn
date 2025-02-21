@@ -1,0 +1,67 @@
+# Copyright (C) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("../../../device/base/config.gni")
+
+module_output_path = "${OHOS_PROFILER_TEST_MODULE_OUTPUT_PATH}/device"
+config("module_private_config") {
+  visibility = [ ":*" ]
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+  }
+}
+
+ohos_unittest("plugin_module_api_ut") {
+  module_out_path = module_output_path
+  deps = [
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/memory_data:memory_data_cpp",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/sample_data:sample_data_cpp",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/stream_data:stream_data_cpp",
+    "//third_party/bounds_checking_function:libsec_static",
+    "//third_party/googletest:gtest",
+  ]
+  include_dirs = [
+    "../",
+    "${OHOS_PROFILER_DIR}/device/plugins/memory_plugin/include",
+    "${OHOS_PROFILER_DIR}/device/plugins/sample_plugin/include",
+    "${OHOS_PROFILER_DIR}/device/plugins/stream_plugin/include",
+    "${OHOS_PROFILER_DIR}/device/plugins/api/include",
+    "${OHOS_PROFILER_DIR}/device/plugins/api/src",
+    "${OHOS_PROFILER_DIR}/device/base/include",
+    "//third_party/googletest/googletest/include/gtest",
+    "//third_party/bounds_checking_function/include",
+  ]
+  sources = [
+    "${OHOS_PROFILER_DIR}/device/plugins/memory_plugin/src/buffer_splitter.cpp",
+    "${OHOS_PROFILER_DIR}/device/plugins/memory_plugin/src/memory_data_plugin.cpp",
+    "${OHOS_PROFILER_DIR}/device/plugins/memory_plugin/src/smaps_stats.cpp",
+    "${OHOS_PROFILER_DIR}/device/plugins/sample_plugin/src/sample_plugin.cpp",
+    "${OHOS_PROFILER_DIR}/device/plugins/stream_plugin/src/stream_plugin.cpp",
+    "unittest/plugin_module_api_test.cpp",
+  ]
+  cflags = [
+    "-pthread",
+    "-Wno-inconsistent-missing-override",
+    "-Dprivate=public",  #allow test code access private members
+  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+  configs = [ ":module_private_config" ]
+}
+
+group("unittest") {
+  testonly = true
+  deps = [ ":plugin_module_api_ut" ]
+}

@@ -1,0 +1,57 @@
+# Copyright (C) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//src/ts.gni")
+
+ohos_source_set("trace_data") {
+  sources = [
+    "trace_data_cache.cpp",
+    "trace_data_cache.h",
+    "trace_data_cache_base.cpp",
+    "trace_data_cache_base.h",
+    "trace_data_cache_reader.cpp",
+    "trace_data_cache_reader.h",
+    "trace_data_cache_writer.cpp",
+    "trace_data_cache_writer.h",
+    "trace_data_db.cpp",
+    "trace_data_db.h",
+    "trace_stdtype.cpp",
+    "trace_stdtype.h",
+  ]
+
+  if (enable_ts_utest && !use_wasm) {
+    cflags = [
+      "-fprofile-arcs",
+      "-ftest-coverage",
+    ]
+    ldflags = [
+      "-fprofile-arcs",
+      "-ftest-coverage",
+      "--coverage",
+    ]
+    if (is_macx && is_test) {
+      cflags += [ "-D UT_MAC" ]
+    }
+  }
+  include_dirs = [
+    "//third_party/sqlite/include",
+    "//src",
+    "//src/base",
+    "//src/include",
+    "//src/table",
+    ".",
+    "${OHOS_PROTO_GEN}/types/plugins/memory_data",
+    "//third_party/protobuf/src",
+  ]
+}
