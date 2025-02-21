@@ -1,0 +1,42 @@
+# Copyright (c) Huawei Technologies Co., Ltd. 2022-2023. All rights reserved.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//developtools/profiler/hidebug/hidebug.gni")
+
+ohos_source_set("libhidebug_source") {
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  include_dirs = [ "../../interfaces/native/innerkits/include" ]
+
+  sources = [ "hidebug_base.c" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hichecker:libhichecker",
+    "hilog:libhilog",
+    "init:libbegetutil",
+  ]
+}
+
+ohos_source_set("libhidebug_init_source") {
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  defines = [ "HIDEBUG_IN_INIT" ]
+
+  include_dirs = [ "../../interfaces/native/innerkits/include" ]
+
+  external_deps = [ "init:libinit_module_engine" ]
+  sources = [ "hidebug_base.c" ]
+  deps = [ "//third_party/bounds_checking_function:libsec_static" ]
+}

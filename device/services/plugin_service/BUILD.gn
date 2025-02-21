@@ -1,0 +1,44 @@
+# Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("../../base/config.gni")
+
+ohos_source_set("hiprofiler_plugin_service") {
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  public_deps = [
+    "${OHOS_PROFILER_DIR}/device/services/profiler_service:profiler_service",
+    "${OHOS_PROFILER_DIR}/device/services/shared_memory:shared_memory",
+    "${OHOS_PROFILER_DIR}/protos/services:plugin_service_proto",
+    "${OHOS_PROFILER_DIR}/protos/services:profiler_service_all_type_source",
+  ]
+  include_dirs = [
+    "include",
+    "${OHOS_PROFILER_DIR}/device/services/ipc/include",
+    "${OHOS_PROFILER_DIR}/device/services/shared_memory/include",
+    "${OHOS_PROFILER_DIR}/device/services/profiler_service/include",
+  ]
+  sources = [
+    "src/plugin_command_builder.cpp",
+    "src/plugin_service.cpp",
+    "src/plugin_service_impl.cpp",
+    "src/plugin_session.cpp",
+    "src/plugin_session_manager.cpp",
+  ]
+  public_configs = [ "${OHOS_PROFILER_DIR}/device/base:hiprofiler_test_config" ]
+  deps = [ "../../base:hiprofiler_base" ]
+  if (current_toolchain != host_toolchain) {
+    external_deps = [ "hilog:libhilog" ]
+  }
+}
