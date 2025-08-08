@@ -1,0 +1,524 @@
+binder/binder_alloc_lru_end
+binder/binder_alloc_lru_start
+binder/binder_alloc_page_end
+binder/binder_alloc_page_start
+binder/binder_command
+binder/binder_free_lru_end
+binder/binder_free_lru_start
+binder/binder_ioctl
+binder/binder_ioctl_done
+binder/binder_lock
+binder/binder_locked
+binder/binder_read_done
+binder/binder_return
+binder/binder_transaction
+binder/binder_transaction_alloc_buf
+binder/binder_transaction_buffer_release
+binder/binder_transaction_failed_buffer_release
+binder/binder_transaction_fd
+binder/binder_transaction_node_to_ref
+binder/binder_transaction_received
+binder/binder_transaction_ref_to_node
+binder/binder_transaction_ref_to_ref
+binder/binder_unlock
+binder/binder_unmap_kernel_end
+binder/binder_unmap_kernel_start
+binder/binder_unmap_user_end
+binder/binder_unmap_user_start
+binder/binder_update_page_range
+binder/binder_wait_for_work
+binder/binder_write_done
+block/block_bio_backmerge
+block/block_bio_bounce
+block/block_bio_complete
+block/block_bio_frontmerge
+block/block_bio_queue
+block/block_bio_remap
+block/block_dirty_buffer
+block/block_getrq
+block/block_plug
+block/block_rq_complete
+block/block_rq_insert
+block/block_rq_issue
+block/block_rq_remap
+block/block_rq_requeue
+block/block_sleeprq
+block/block_split
+block/block_touch_buffer
+block/block_unplug
+clk/clk_disable
+clk/clk_disable_complete
+clk/clk_enable
+clk/clk_enable_complete
+clk/clk_prepare
+clk/clk_prepare_complete
+clk/clk_set_parent
+clk/clk_set_parent_complete
+clk/clk_set_phase
+clk/clk_set_phase_complete
+clk/clk_set_rate
+clk/clk_set_rate_complete
+clk/clk_unprepare
+clk/clk_unprepare_complete
+compaction/mm_compaction_begin
+compaction/mm_compaction_deferred
+compaction/mm_compaction_defer_compaction
+compaction/mm_compaction_defer_reset
+compaction/mm_compaction_end
+compaction/mm_compaction_finished
+compaction/mm_compaction_isolate_freepages
+compaction/mm_compaction_isolate_migratepages
+compaction/mm_compaction_migratepages
+compaction/mm_compaction_suitable
+compaction/mm_compaction_try_to_compact_pages
+ext4/ext4_allocate_blocks
+ext4/ext4_allocate_inode
+ext4/ext4_alloc_da_blocks
+ext4/ext4_begin_ordered_truncate
+ext4/ext4_collapse_range
+ext4/ext4_da_release_space
+ext4/ext4_da_reserve_space
+ext4/ext4_da_update_reserve_space
+ext4/ext4_da_write_begin
+ext4/ext4_da_write_end
+ext4/ext4_da_write_pages
+ext4/ext4_da_write_pages_extent
+ext4/ext4_direct_IO_enter
+ext4/ext4_direct_IO_exit
+ext4/ext4_discard_blocks
+ext4/ext4_discard_preallocations
+ext4/ext4_drop_inode
+ext4/ext4_es_cache_extent
+ext4/ext4_es_find_delayed_extent_range_enter
+ext4/ext4_es_find_delayed_extent_range_exit
+ext4/ext4_es_insert_extent
+ext4/ext4_es_lookup_extent_enter
+ext4/ext4_es_lookup_extent_exit
+ext4/ext4_es_remove_extent
+ext4/ext4_es_shrink
+ext4/ext4_es_shrink_count
+ext4/ext4_es_shrink_scan_enter
+ext4/ext4_es_shrink_scan_exit
+ext4/ext4_evict_inode
+ext4/ext4_ext_convert_to_initialized_enter
+ext4/ext4_ext_convert_to_initialized_fastpath
+ext4/ext4_ext_handle_unwritten_extents
+ext4/ext4_ext_in_cache
+ext4/ext4_ext_load_extent
+ext4/ext4_ext_map_blocks_enter
+ext4/ext4_ext_map_blocks_exit
+ext4/ext4_ext_put_in_cache
+ext4/ext4_ext_remove_space
+ext4/ext4_ext_remove_space_done
+ext4/ext4_ext_rm_idx
+ext4/ext4_ext_rm_leaf
+ext4/ext4_ext_show_extent
+ext4/ext4_fallocate_enter
+ext4/ext4_fallocate_exit
+ext4/ext4_find_delalloc_range
+ext4/ext4_forget
+ext4/ext4_free_blocks
+ext4/ext4_free_inode
+ext4/ext4_get_implied_cluster_alloc_exit
+ext4/ext4_get_reserved_cluster_alloc
+ext4/ext4_ind_map_blocks_enter
+ext4/ext4_ind_map_blocks_exit
+ext4/ext4_insert_range
+ext4/ext4_invalidatepage
+ext4/ext4_journalled_invalidatepage
+ext4/ext4_journalled_write_end
+ext4/ext4_journal_start
+ext4/ext4_journal_start_reserved
+ext4/ext4_load_inode
+ext4/ext4_load_inode_bitmap
+ext4/ext4_mark_inode_dirty
+ext4/ext4_mballoc_alloc
+ext4/ext4_mballoc_discard
+ext4/ext4_mballoc_free
+ext4/ext4_mballoc_prealloc
+ext4/ext4_mb_bitmap_load
+ext4/ext4_mb_buddy_bitmap_load
+ext4/ext4_mb_discard_preallocations
+ext4/ext4_mb_new_group_pa
+ext4/ext4_mb_new_inode_pa
+ext4/ext4_mb_release_group_pa
+ext4/ext4_mb_release_inode_pa
+ext4/ext4_other_inode_update_time
+ext4/ext4_punch_hole
+ext4/ext4_readpage
+ext4/ext4_read_block_bitmap_load
+ext4/ext4_releasepage
+ext4/ext4_remove_blocks
+ext4/ext4_request_blocks
+ext4/ext4_request_inode
+ext4/ext4_sync_file_enter
+ext4/ext4_sync_file_exit
+ext4/ext4_sync_fs
+ext4/ext4_trim_all_free
+ext4/ext4_trim_extent
+ext4/ext4_truncate_enter
+ext4/ext4_truncate_exit
+ext4/ext4_unlink_enter
+ext4/ext4_unlink_exit
+ext4/ext4_writepage
+ext4/ext4_writepages
+ext4/ext4_writepages_result
+ext4/ext4_write_begin
+ext4/ext4_write_end
+ext4/ext4_zero_range
+f2fs/f2fs_sync_file_enter
+f2fs/f2fs_sync_file_exit
+f2fs/f2fs_write_begin
+f2fs/f2fs_write_end
+# fib/fib_table_lookup
+filelock/break_lease_block
+filelock/break_lease_noblock
+filelock/break_lease_unblock
+filelock/generic_add_lease
+filelock/generic_delete_lease
+filelock/time_out_leases
+filemap/file_check_and_advance_wb_err
+filemap/filemap_set_wb_err
+filemap/mm_filemap_add_to_page_cache
+filemap/mm_filemap_delete_from_page_cache
+# ftrace/bprint
+ftrace/bputs
+ftrace/branch
+ftrace/context_switch
+ftrace/funcgraph_entry
+ftrace/funcgraph_exit
+ftrace/function
+ftrace/kernel_stack
+ftrace/mmiotrace_map
+ftrace/mmiotrace_rw
+ftrace/print
+ftrace/user_stack
+ftrace/wakeup
+gpio/gpio_direction
+gpio/gpio_value
+gpu_mem/gpu_mem_total
+i2c/i2c_read
+i2c/i2c_reply
+i2c/i2c_result
+i2c/i2c_write
+ipi/ipi_entry
+ipi/ipi_exit
+ipi/ipi_raise
+irq/irq_handler_entry
+irq/irq_handler_exit
+irq/softirq_entry
+irq/softirq_exit
+irq/softirq_raise
+# jbd2/jbd2_checkpoint
+# jbd2/jbd2_checkpoint_stats
+# jbd2/jbd2_commit_flushing
+# jbd2/jbd2_commit_locking
+# jbd2/jbd2_commit_logging
+# jbd2/jbd2_drop_transaction
+# jbd2/jbd2_end_commit
+# jbd2/jbd2_handle_extend
+# jbd2/jbd2_handle_start
+# jbd2/jbd2_handle_stats
+# jbd2/jbd2_lock_buffer_stall
+# jbd2/jbd2_run_stats
+# jbd2/jbd2_start_commit
+# jbd2/jbd2_submit_inode_data
+# jbd2/jbd2_update_log_tail
+# jbd2/jbd2_write_superblock
+kmem/kfree
+kmem/kmalloc
+kmem/kmalloc_node
+kmem/kmem_cache_alloc
+kmem/kmem_cache_alloc_node
+kmem/kmem_cache_free
+kmem/mm_page_alloc
+kmem/mm_page_alloc_extfrag
+kmem/mm_page_alloc_zone_locked
+kmem/mm_page_free
+kmem/mm_page_free_batched
+kmem/mm_page_pcpu_drain
+kmem/rss_stat
+# migrate/mm_migrate_pages
+# napi/napi_poll
+mmc/mmc_request_done
+mmc/mmc_request_start
+net/napi_gro_frags_entry
+net/napi_gro_receive_entry
+net/netif_receive_skb
+net/netif_receive_skb_entry
+net/netif_rx
+net/netif_rx_entry
+net/netif_rx_ni_entry
+net/net_dev_queue
+net/net_dev_start_xmit
+net/net_dev_xmit
+# nfs/nfs_access_enter
+# nfs/nfs_access_exit
+# nfs/nfs_atomic_open_enter
+# nfs/nfs_atomic_open_exit
+# nfs/nfs_create_enter
+# nfs/nfs_create_exit
+# nfs/nfs_fsync_enter
+# nfs/nfs_fsync_exit
+# nfs/nfs_getattr_enter
+# nfs/nfs_getattr_exit
+# nfs/nfs_invalidate_mapping_enter
+# nfs/nfs_invalidate_mapping_exit
+# nfs/nfs_link_enter
+# nfs/nfs_link_exit
+# nfs/nfs_lookup_enter
+# nfs/nfs_lookup_exit
+# nfs/nfs_lookup_revalidate_enter
+# nfs/nfs_lookup_revalidate_exit
+# nfs/nfs_mkdir_enter
+# nfs/nfs_mkdir_exit
+# nfs/nfs_mknod_enter
+# nfs/nfs_mknod_exit
+# nfs/nfs_refresh_inode_enter
+# nfs/nfs_refresh_inode_exit
+# nfs/nfs_remove_enter
+# nfs/nfs_remove_exit
+# nfs/nfs_rename_enter
+# nfs/nfs_rename_exit
+# nfs/nfs_revalidate_inode_enter
+# nfs/nfs_revalidate_inode_exit
+# nfs/nfs_rmdir_enter
+# nfs/nfs_rmdir_exit
+# nfs/nfs_setattr_enter
+# nfs/nfs_setattr_exit
+# nfs/nfs_sillyrename_rename
+# nfs/nfs_sillyrename_unlink
+# nfs/nfs_symlink_enter
+# nfs/nfs_symlink_exit
+# nfs/nfs_unlink_enter
+# nfs/nfs_unlink_exit
+# nfs/nfs_writeback_inode_enter
+# nfs/nfs_writeback_inode_exit
+# nfs/nfs_writeback_page_enter
+# nfs/nfs_writeback_page_exit
+oom/oom_score_adj_update
+pagemap/mm_lru_activate
+pagemap/mm_lru_insertion
+power/clock_disable
+power/clock_enable
+power/clock_set_rate
+power/cpu_frequency
+power/cpu_frequency_limits
+power/cpu_idle
+power/device_pm_callback_end
+power/device_pm_callback_start
+power/dev_pm_qos_add_request
+power/dev_pm_qos_remove_request
+power/dev_pm_qos_update_request
+power/pm_qos_add_request
+power/pm_qos_remove_request
+power/pm_qos_update_flags
+power/pm_qos_update_request
+power/pm_qos_update_request_timeout
+power/pm_qos_update_target
+power/power_domain_target
+power/pstate_sample
+power/suspend_resume
+power/wakeup_source_activate
+power/wakeup_source_deactivate
+printk/console
+# random/add_device_randomness
+# random/add_disk_randomness
+# random/add_input_randomness
+# random/credit_entropy_bits
+# random/debit_entropy
+# random/extract_entropy
+# random/extract_entropy_user
+# random/get_random_bytes
+# random/get_random_bytes_arch
+# random/mix_pool_bytes
+# random/mix_pool_bytes_nolock
+# random/push_to_pool
+# random/random_read
+# random/urandom_read
+# random/xfer_secondary_pool
+raw_syscalls/sys_enter
+raw_syscalls/sys_exit
+rcu/rcu_utilization
+# regmap/regcache_drop_region
+# regmap/regcache_sync
+# regmap/regmap_async_complete_done
+# regmap/regmap_async_complete_start
+# regmap/regmap_async_io_complete
+# regmap/regmap_async_write_start
+# regmap/regmap_cache_bypass
+# regmap/regmap_cache_only
+# regmap/regmap_hw_read_done
+# regmap/regmap_hw_read_start
+# regmap/regmap_hw_write_done
+# regmap/regmap_hw_write_start
+# regmap/regmap_reg_read
+# regmap/regmap_reg_read_cache
+# regmap/regmap_reg_write
+regulator/regulator_bypass_disable
+regulator/regulator_bypass_disable_complete
+regulator/regulator_bypass_enable
+regulator/regulator_bypass_enable_complete
+regulator/regulator_disable
+regulator/regulator_disable_complete
+regulator/regulator_enable
+regulator/regulator_enable_complete
+regulator/regulator_enable_delay
+regulator/regulator_set_voltage
+regulator/regulator_set_voltage_complete
+# rpm/rpm_idle
+# rpm/rpm_resume
+# rpm/rpm_return_int
+# rpm/rpm_suspend
+sched/sched_blocked_reason
+sched/sched_kthread_stop
+sched/sched_kthread_stop_ret
+sched/sched_migrate_task
+sched/sched_move_numa
+sched/sched_pi_setprio
+sched/sched_process_exec
+sched/sched_process_exit
+sched/sched_process_fork
+sched/sched_process_free
+sched/sched_process_wait
+sched/sched_stat_blocked
+sched/sched_stat_iowait
+sched/sched_stat_runtime
+sched/sched_stat_sleep
+sched/sched_stat_wait
+sched/sched_stick_numa
+sched/sched_swap_numa
+sched/sched_switch
+sched/sched_wait_task
+sched/sched_wakeup
+sched/sched_wakeup_new
+sched/sched_wake_idle_without_ipi
+sched/sched_waking
+# scsi/scsi_dispatch_cmd_done
+# scsi/scsi_dispatch_cmd_error
+# scsi/scsi_dispatch_cmd_start
+# scsi/scsi_dispatch_cmd_timeout
+# scsi/scsi_eh_wakeup
+signal/signal_deliver
+signal/signal_generate
+# skb/consume_skb
+# skb/kfree_skb
+# skb/skb_copy_datagram_iovec
+# sock/sock_exceed_buf_limit
+# sock/sock_rcvqueue_full
+sunrpc/rpc_bind_status
+sunrpc/rpc_call_status
+sunrpc/rpc_connect_status
+sunrpc/rpc_socket_close
+sunrpc/rpc_socket_connect
+sunrpc/rpc_socket_error
+sunrpc/rpc_socket_reset_connection
+sunrpc/rpc_socket_shutdown
+sunrpc/rpc_socket_state_change
+sunrpc/rpc_task_begin
+sunrpc/rpc_task_complete
+sunrpc/rpc_task_run_action
+sunrpc/rpc_task_sleep
+sunrpc/rpc_task_wakeup
+sunrpc/svc_handle_xprt
+sunrpc/svc_process
+sunrpc/svc_recv
+sunrpc/svc_send
+sunrpc/svc_wake_up
+sunrpc/svc_xprt_dequeue
+sunrpc/svc_xprt_do_enqueue
+sunrpc/xprt_complete_rqst
+sunrpc/xprt_lookup_rqst
+sunrpc/xprt_transmit
+sunrpc/xs_tcp_data_ready
+sunrpc/xs_tcp_data_recv
+task/task_newtask
+task/task_rename
+timer/hrtimer_cancel
+timer/hrtimer_expire_entry
+timer/hrtimer_expire_exit
+timer/hrtimer_init
+timer/hrtimer_start
+timer/itimer_expire
+timer/itimer_state
+timer/timer_cancel
+timer/timer_expire_entry
+timer/timer_expire_exit
+timer/timer_init
+timer/timer_start
+# udp/udp_fail_queue_rcv_skb
+v4l2/v4l2_dqbuf
+v4l2/v4l2_qbuf
+v4l2/vb2_v4l2_buf_done
+v4l2/vb2_v4l2_buf_queue
+v4l2/vb2_v4l2_dqbuf
+v4l2/vb2_v4l2_qbuf
+# vb2/vb2_buf_done
+# vb2/vb2_buf_queue
+# vb2/vb2_dqbuf
+# vb2/vb2_qbuf
+vmscan/mm_shrink_slab_end
+vmscan/mm_shrink_slab_start
+vmscan/mm_vmscan_direct_reclaim_begin
+vmscan/mm_vmscan_direct_reclaim_end
+vmscan/mm_vmscan_kswapd_sleep
+vmscan/mm_vmscan_kswapd_wake
+vmscan/mm_vmscan_lru_isolate
+vmscan/mm_vmscan_lru_shrink_inactive
+vmscan/mm_vmscan_wakeup_kswapd
+vmscan/mm_vmscan_writepage
+workqueue/workqueue_activate_work
+workqueue/workqueue_execute_end
+workqueue/workqueue_execute_start
+workqueue/workqueue_queue_work
+writeback/balance_dirty_pages
+writeback/bdi_dirty_ratelimit
+writeback/global_dirty_state
+writeback/wbc_writepage
+writeback/writeback_bdi_register
+writeback/writeback_congestion_wait
+writeback/writeback_dirty_inode
+writeback/writeback_dirty_inode_enqueue
+writeback/writeback_dirty_inode_start
+writeback/writeback_dirty_page
+writeback/writeback_exec
+writeback/writeback_lazytime
+writeback/writeback_lazytime_iput
+writeback/writeback_mark_inode_dirty
+writeback/writeback_pages_written
+writeback/writeback_queue
+writeback/writeback_queue_io
+writeback/writeback_sb_inodes_requeue
+writeback/writeback_single_inode
+writeback/writeback_single_inode_start
+writeback/writeback_start
+writeback/writeback_wait
+writeback/writeback_wait_iff_congested
+writeback/writeback_wake_background
+writeback/writeback_write_inode
+writeback/writeback_write_inode_start
+writeback/writeback_written
+#######################################
+cgroup/cgroup_attach_task
+cgroup/cgroup_destroy_root
+cgroup/cgroup_freeze
+cgroup/cgroup_mkdir
+cgroup/cgroup_notify_frozen
+cgroup/cgroup_notify_populated
+cgroup/cgroup_release
+cgroup/cgroup_remount
+cgroup/cgroup_rename
+cgroup/cgroup_rmdir
+cgroup/cgroup_setup_root
+cgroup/cgroup_transfer_tasks
+cgroup/cgroup_unfreeze
+cpuhp/cpuhp_enter
+cpuhp/cpuhp_exit
+cpuhp/cpuhp_multi_enter
+dma_fence/dma_fence_destroy
+dma_fence/dma_fence_emit
+dma_fence/dma_fence_enable_signal
+dma_fence/dma_fence_init
+dma_fence/dma_fence_signaled
+dma_fence/dma_fence_wait_end
+dma_fence/dma_fence_wait_start
