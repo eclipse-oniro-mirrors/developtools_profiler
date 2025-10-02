@@ -1,0 +1,67 @@
+# Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#####################hydra-fuzz###################
+import("//build/test.gni")
+import("../../../../../base/config.gni")
+
+##############################fuzztest##########################################
+ohos_fuzztest("HiperfStartPluginFuzzTest") {
+  module_out_path = hiprofiler_fuzz_output_path
+  fuzz_config_file = "${OHOS_PROFILER_DIR}/device/plugins/hiperf_plugin/test/fuzztest/hiperfstartplugin_fuzzer"
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+    "-DFUZZ_TEST",
+  ]
+  sources = [
+    "${OHOS_PROFILER_DIR}/device/plugins/hiperf_plugin/src/hiperf_module.cpp",
+    "${OHOS_PROFILER_DIR}/device/services/profiler_service/src/trace_file_helper.cpp",
+    "${OHOS_PROFILER_DIR}/device/services/profiler_service/src/trace_file_writer.cpp",
+    "hiperfstartplugin_fuzzer.cpp",
+  ]
+  deps = [
+    "${OHOS_PROFILER_DIR}/device/base:hiprofiler_base",
+    "${OHOS_PROFILER_DIR}/protos/services:common_types_lite_proto",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/hiperf_data:hiperf_data_cpp",
+  ]
+
+  include_dirs = [
+    "${OHOS_PROFILER_DIR}/device/plugins/hiperf_plugin/include",
+    "${OHOS_PROFILER_DIR}/device/plugins/api/include",
+    "${OHOS_PROFILER_DIR}/interfaces/kits",
+    "${OHOS_PROFILER_DIR}/device/base/include",
+    "${OHOS_PROFILER_DIR}/device/services/profiler_service/src",
+  ]
+  defines = [ "LITE_PROTO" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog_base",
+    "hisysevent:libhisysevent",
+    "openssl:libcrypto_shared",
+    "protobuf:protobuf_lite",
+  ]
+}
+
+###############################################################################
+group("fuzztest") {
+  testonly = true
+  deps = []
+  deps += [
+    # deps file
+    ":HiperfStartPluginFuzzTest",
+  ]
+}
+###############################################################################
