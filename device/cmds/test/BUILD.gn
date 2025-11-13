@@ -1,0 +1,85 @@
+# Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("../../base/config.gni")
+import("../../plugins/ftrace_plugin/ftrace.gni")
+
+module_output_path = "${OHOS_PROFILER_TEST_MODULE_OUTPUT_PATH}/device"
+config("module_private_config") {
+  visibility = [ ":*" ]
+  if (current_toolchain != host_toolchain) {
+    defines = [ "HAVE_HILOG" ]
+  }
+}
+
+ohos_unittest("hiprofiler_cmd_ut") {
+  module_out_path = module_output_path
+  sources = [
+    "../src/parse_plugin_config.cpp",
+    "unittest/hiprofiler_cmd_test.cpp",
+    "unittest/parse_plugin_config_test.cpp",
+  ]
+  deps = [
+    "${OHOS_PROFILER_DIR}/device/base:hiprofiler_base",
+    "${OHOS_PROFILER_DIR}/protos/services:profiler_service_proto",
+    "${OHOS_PROFILER_DIR}/protos/services:profiler_service_type_source",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/cpu_data:cpu_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/diskio_data:diskio_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/ffrt_profiler:ffrt_profiler_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/ftrace_data/${device_kernel_version}:ftrace_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/gpu_data:gpu_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/hidump_data:hidump_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/hiebpf_data:hiebpf_data_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/hilog_data:hilog_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/hiperf_data:hiperf_data_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/hisysevent_data:hisysevent_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/memory_data:memory_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/native_hook:native_hook_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/network_data:network_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/network_profiler:network_profiler_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/process_data:process_plugin_config_cpp_standard",
+    "${OHOS_PROFILER_DIR}/protos/types/plugins/xpower_data:xpower_plugin_config_cpp_standard",
+  ]
+  include_dirs = [
+    "../include",
+    "${OHOS_PROFILER_DIR}/device/base/include",
+  ]
+  cflags = [
+    "-Wno-inconsistent-missing-override",
+    "-Dprivate=public",  #allow test code access private members
+  ]
+  external_deps = [
+    "abseil-cpp:absl_cord",
+    "abseil-cpp:absl_log",
+    "abseil-cpp:absl_sync",
+    "bounds_checking_function:libsec_shared",
+    "googletest:gtest",
+    "grpc:gpr",
+    "grpc:grpc",
+    "grpc:grpcxx",
+    "hilog:libhilog_base",
+    "init:libbegetutil",
+    "openssl:libcrypto_shared",
+    "protobuf:protobuf",
+  ]
+  configs = [ ":module_private_config" ]
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
+group("unittest") {
+  testonly = true
+  deps = [ ":hiprofiler_cmd_ut" ]
+}

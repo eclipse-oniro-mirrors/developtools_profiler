@@ -1,0 +1,98 @@
+# Copyright (c) Huawei Technologies Co., Ltd. 2023. All rights reserved.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("//developtools/profiler/device/base/config.gni")
+import("//developtools/profiler/protos/protos.gni")
+
+module_output_path = "${OHOS_PROFILER_TEST_MODULE_OUTPUT_PATH}/proto_encoder"
+config("module_private_config") {
+  visibility = [ ":*" ]
+}
+
+protos_dir = "../example/"
+protos_root_dir = rebase_path(protos_dir, root_build_dir)
+proto_out_dir = "$root_gen_dir/cpp/" + rebase_path(protos_dir, "//")
+proto_rel_out_dir = rebase_path(proto_out_dir, root_build_dir)
+
+protos_defines = [ "$protos_dir" + "example.proto" ]
+example_codegen_all = []
+foreach(proto, protos_defines) {
+  name = get_path_info(proto, "name")
+  example_codegen_all += [
+    "$proto_out_dir/$name.pb.h",
+    "$proto_out_dir/$name.pb.cc",
+    "$proto_out_dir/$name.pbencoder.h",
+    "$proto_out_dir/$name.pbencoder.cc",
+  ]
+}
+
+action("proto_gen_source") {
+  script = "${OHOS_PROFILER_DIR}/build/protoc.sh"
+  sources = protos_defines
+  outputs = example_codegen_all
+  args = [
+    "$libc_dir_proto",
+    "$root_output_dir_proto",
+    "$proto_rel_out_dir",
+    "--cpp_out",
+    "$proto_rel_out_dir",
+    "--proto_path",
+    "$protos_root_dir",
+  ]
+  args += rebase_path(sources, root_build_dir)
+  args += [ "$ohos_indep_compiler_enable" ]
+  deps = [ "${OHOS_PROFILER_DIR}/device/services/ipc:protoencoder_plugin(${host_toolchain})" ]
+  external_deps = [ "protobuf:protoc(${host_toolchain})" ]
+}
+
+ohos_source_set("proto_example_source") {
+  deps = [ ":proto_gen_source" ]
+  include_dirs = [ "$proto_out_dir" ]
+  sources = example_codegen_all
+  external_deps = [
+    "protobuf:protobuf_lite_static",
+  ]
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}
+
+ohos_unittest("proto_encoder_ut") {
+  module_out_path = module_output_path
+  sources = [
+    "unittest/base_message_unittest.cpp",
+    "unittest/varint_encode_unittest.cpp",
+  ]
+  deps = [
+    ":proto_example_source",
+    "../:proto_encoder_source",
+  ]
+  include_dirs = [
+    "../include",
+    "../example",
+    "$proto_out_dir",
+  ]
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "googletest:gtest",
+    "protobuf:protobuf_lite",
+  ]
+  configs = [ ":module_private_config" ]
+  subsystem_name = "${OHOS_PROFILER_SUBSYS_NAME}"
+  part_name = "${OHOS_PROFILER_PART_NAME}"
+}
+
+group("unittest") {
+  testonly = true
+  deps = [ ":proto_encoder_ut" ]
+}
