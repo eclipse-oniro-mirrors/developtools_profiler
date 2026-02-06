@@ -1,0 +1,160 @@
+# Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("../../../base/config.gni")
+import("native_daemon.gni")
+
+module_output_path = "${OHOS_PROFILER_TEST_MODULE_OUTPUT_PATH}/device"
+
+sources_base = [
+  "unittest/common/native/callstack_test.cpp",
+  "unittest/common/native/debug_logger_test.cpp",
+  "unittest/common/native/hashlist_test.cpp",
+  "unittest/common/native/hook_manager_test.cpp",
+  "unittest/common/native/hook_record_factory_test.cpp",
+  "unittest/common/native/hook_service_test.cpp",
+  "unittest/common/native/register_test.cpp",
+  "unittest/common/native/stack_preprocess_test.cpp",
+  "unittest/common/native/stack_builder_test.cpp",
+  "unittest/common/native/symbols_file_test.cpp",
+  "unittest/common/native/utilities_test.cpp",
+  "unittest/common/native/virtual_thread_test.cpp",
+  "unittest/common/native/virtual_runtime_test.cpp",
+  "../../api/src/buffer_writer.cpp",
+  "../../api/src/command_poller.cpp",
+  "../../api/src/writer_adapter.cpp",
+  "../src/hook_manager.cpp",
+  "../src/hook_record.cpp",
+  "../src/hook_record_factory.cpp",
+  "../src/call_stack.cpp",
+  "../src/debug_logger.cpp",
+  "../src/dwarf_encoding.cpp",
+  "../src/get_thread_id.cpp",
+  "../src/hook_service.cpp",
+  "../src/register.cpp",
+  "../src/stack_builder.cpp",
+  "../src/stack_data_repeater.cpp",
+  "../src/stack_preprocess.cpp",
+  "../src/symbols_file.cpp",
+  "../src/utilities.cpp",
+  "../src/virtual_runtime.cpp",
+  "../src/virtual_thread.cpp",
+  "${OHOS_PROFILER_DIR}/device/plugins/native_daemon/native_memory_profiler_sa/src/native_memory_profiler_sa_config.cpp",
+  "${OHOS_PROFILER_DIR}/device/plugins/native_daemon/native_memory_profiler_sa/src/native_memory_profiler_sa_death_recipient.cpp",
+  "${OHOS_PROFILER_DIR}/device/plugins/native_daemon/native_memory_profiler_sa/src/native_memory_profiler_sa_service.cpp",
+  "${OHOS_PROFILER_DIR}/device/plugins/native_daemon/native_memory_profiler_sa/src/native_memory_profiler_sa_stub.cpp",
+  "${OHOS_PROFILER_DIR}/device/services/profiler_service/src/trace_file_helper.cpp",
+  "${OHOS_PROFILER_DIR}/device/services/profiler_service/src/trace_file_writer.cpp",
+]
+
+common_deps = [
+  "${OHOS_PROFILER_DIR}/device/plugins/network_profiler/service:network_profiler_service",
+  "${OHOS_PROFILER_DIR}/device/services/shared_memory:shared_memory_source",
+  "${OHOS_PROFILER_DIR}/proto_encoder:proto_encoder_source",
+  "${OHOS_PROFILER_DIR}/protos/services:plugin_service_proto",
+  "${OHOS_PROFILER_DIR}/protos/services:profiler_service_all_type_source",
+  "${OHOS_PROFILER_DIR}/protos/types/plugins/native_hook:native_hook_cpp",
+  "${OHOS_PROFILER_DIR}/protos/types/plugins/native_hook:native_hook_cpp_standard",
+  "../../../base:hiprofiler_base",
+]
+
+config("native_daemon_test_config") {
+  cflags = code_check_flag
+  ldflags = []
+  defines = []
+
+  cflags += [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]  # allow test code access private members
+  if (native_daemon_test_coverage && is_ohos) {
+    defines += [ "TEST_COVERAGE" ]
+    cflags += [
+      "-fprofile-arcs",
+      "-ftest-coverage",
+    ]
+    ldflags += [ "--coverage" ]
+  }
+
+  defines += [ "DEFAULT_LOG_LEVEL=LEVEL_VERBOSE" ]
+  defines += [
+    "HAVE_LIBUNWINDER=1",
+    "HIPERF_DEBUG",
+    "HIPERF_DEBUG_PRINTF",
+    "CONFIG_NO_HILOG",
+  ]
+  defines += [ "target_cpu_${target_cpu}" ]
+
+  include_dirs = [
+    "../include",
+    "../../../base/include",
+    "../src/",
+    "../../api/include",
+    "../../api/src",
+    "../../native_hook/include",
+    "../../native_hook/src",
+    "${OHOS_PROFILER_DIR}/interfaces/kits",
+    "${OHOS_PROFILER_DIR}/device/services/ipc/include",
+    "${OHOS_PROFILER_DIR}/device/services/shared_memory/include",
+    "${native_daemon_path}/test/unittest/common/native/include",
+    "${native_daemon_path}/include",
+    "${OHOS_PROFILER_DIR}/device/plugins/native_daemon/native_memory_profiler_sa/include",
+    "${OHOS_PROFILER_DIR}/device/plugins/native_daemon/native_memory_profiler_sa/util/include",
+    "${OHOS_PROFILER_DIR}/device/services/profiler_service/src",
+  ]
+}
+
+ohos_unittest("native_daemon_ut") {
+  configs = [ ":native_daemon_test_config" ]
+  module_out_path = module_output_path
+  resource_config_file = "${OHOS_PROFILER_DIR}/device/ohos_test.xml"
+  deps = common_deps
+  use_exceptions = true
+  sources = sources_base
+  if (is_linux) {
+    static_link = false
+  }
+  external_deps = [
+    "ability_base:extractortool",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
+    "cJSON:cjson",
+    "c_utils:utils",
+    "faultloggerd:libunwinder",
+    "googletest:gtest",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+    "openssl:libcrypto_shared",
+    "protobuf:protobuf_lite",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "zlib:libz",
+  ]
+  defines = [ "ENABLE_HAP_EXTRACTOR" ]
+  if (current_toolchain != host_toolchain) {
+    defines += [ "HAVE_HILOG" ]
+    external_deps += [ "hilog:libhilog" ]
+  }
+}
+
+group("unittest") {
+  testonly = true
+  if (native_daemon_target_host) {
+    deps = [ ":native_daemon_ut(${host_toolchain})" ]
+  } else {
+    deps = [ ":native_daemon_ut" ]
+  }
+}
