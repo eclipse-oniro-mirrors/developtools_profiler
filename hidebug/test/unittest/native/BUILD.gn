@@ -1,0 +1,56 @@
+# Copyright (c) Huawei Technologies Co., Ltd. 2022. All rights reserved.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("//developtools/profiler/hidebug/hidebug.gni")
+
+module_output_path = "hiprofiler/hidebug/"
+
+ohos_unittest("hidebug_test") {
+  module_out_path = module_output_path
+  sources = [
+    "hiappevent_util_test.cpp",
+    "hidebug_backtrace_test.cpp",
+    "hidebug_native_interface_test.cpp",
+    "hidebug_test.cpp",
+    "hidebug_util_test.cpp",
+  ]
+  defines = [ "is_ohos=${is_ohos}" ]
+  deps = [
+    "$hidebug_path/frameworks/hidebug_ndk:ohhidebug",
+    "$hidebug_path/frameworks/native:hidebug_native",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "hiview:libucollection_client",
+  ]
+
+  include_dirs = [
+    "$hidebug_path/frameworks/native/include",
+    "$hidebug_path/interfaces/native/innerkits/include",
+    "$hidebug_path/interfaces/native/kits/include",
+  ]
+}
+
+ohos_executable("malloc_dispatch_exe") {
+  sources = [ "hidebug_malloc_dispatch.cpp" ]
+  include_dirs = [ "$hidebug_path/interfaces/native/kits/include" ]
+  defines = [ "HOOK_ENABLE" ]
+  deps = [ "$hidebug_path/frameworks/hidebug_ndk:ohhidebug" ]
+  external_deps = [ "bounds_checking_function:libsec_shared" ]
+  install_enable = false
+  install_images = [ "system" ]
+  part_name = "hiprofiler"
+  subsystem_name = "developtools"
+}
